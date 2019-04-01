@@ -16,6 +16,12 @@
 package com.google.cloud.bigtable.data.v2.stub;
 
 import com.google.api.core.InternalApi;
+import com.google.api.gax.batching.BatchingSettings;
+import com.google.api.gax.batching.FlowControlSettings;
+import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.batching.v2.Batcher;
+import com.google.api.gax.batching.v2.BatchingDescriptor;
+import com.google.api.gax.batching.v2.EntryBatcherFactory;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
 import com.google.api.gax.retrying.RetryAlgorithm;
 import com.google.api.gax.retrying.RetryingExecutorWithContext;
@@ -31,9 +37,11 @@ import com.google.api.gax.tracing.TracedBatchingCallable;
 import com.google.api.gax.tracing.TracedServerStreamingCallable;
 import com.google.api.gax.tracing.TracedUnaryCallable;
 import com.google.bigtable.v2.MutateRowsRequest;
+import com.google.bigtable.v2.MutateRowsResponse;
 import com.google.bigtable.v2.ReadRowsRequest;
 import com.google.bigtable.v2.SampleRowKeysRequest;
 import com.google.bigtable.v2.SampleRowKeysResponse;
+import com.google.cloud.bigtable.data.v2.internal.NameUtil;
 import com.google.cloud.bigtable.data.v2.internal.RequestContext;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
@@ -46,6 +54,7 @@ import com.google.cloud.bigtable.data.v2.models.RowAdapter;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.BulkMutateRowsUserFacingCallable;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsBatchingDescriptor;
+import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsEntryBatchingDescriptor;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsRetryingCallable;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsUserFacingCallable;
 import com.google.cloud.bigtable.data.v2.stub.readrows.FilterMarkerRowsCallable;
@@ -55,6 +64,7 @@ import com.google.cloud.bigtable.data.v2.stub.readrows.ReadRowsUserCallable;
 import com.google.cloud.bigtable.data.v2.stub.readrows.RowMergingCallable;
 import com.google.cloud.bigtable.gaxx.retrying.ApiResultRetryAlgorithm;
 import com.google.cloud.bigtable.gaxx.tracing.WrappedTracerFactory;
+import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.List;
 import org.threeten.bp.Duration;
@@ -89,6 +99,7 @@ public class EnhancedBigtableStub implements AutoCloseable {
   private final UnaryCallable<RowMutation, Void> bulkMutateRowsBatchingCallable;
   private final UnaryCallable<ConditionalRowMutation, Boolean> checkAndMutateRowCallable;
   private final UnaryCallable<ReadModifyWriteRow, Row> readModifyWriteRowCallable;
+  private final BatchingSettings baseBatchingSettings;
 
   public static EnhancedBigtableStub create(EnhancedBigtableStubSettings settings)
       throws IOException {
@@ -175,6 +186,18 @@ public class EnhancedBigtableStub implements AutoCloseable {
     bulkMutateRowsBatchingCallable = createBulkMutateRowsBatchingCallable();
     checkAndMutateRowCallable = createCheckAndMutateRowCallable();
     readModifyWriteRowCallable = createReadModifyWriteRowCallable();
+    this.baseBatchingSettings = BatchingSettings.newBuilder()
+        .setIsEnabled(true)
+        .setElementCountThreshold(100L)
+        .setRequestByteThreshold(20L * 1024 * 1024)
+        .setDelayThreshold(Duration.ofSeconds(1))
+        .setFlowControlSettings(
+            FlowControlSettings.newBuilder()
+                .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
+                .setMaxOutstandingRequestBytes(100L * 1024 * 1024)
+                .setMaxOutstandingElementCount(1_000L)
+                .build())
+        .build();
   }
 
   // <editor-fold desc="Callable creators">
@@ -196,6 +219,63 @@ public class EnhancedBigtableStub implements AutoCloseable {
       RowAdapter<RowT> rowAdapter) {
     return createReadRowsCallable(settings.readRowsSettings(), rowAdapter);
   }
+
+  /**
+   * This operation creates an {@link EntryBatcherFactory} which accepts
+   * {@link ServerStreamingCallable} as an argument.
+   *
+   * If {@link BatchingSettings} not present in the received argument, then it uses a default
+   * baseBatchingsettings.
+   * <pre>{@Code
+   * BatchingSettings.newBuilder()
+   *         .setIsEnabled(true)
+   *         .setElementCountThreshold(100L)
+   *         .setRequestByteThreshold(20L * 1024 * 1024)
+   *         .setDelayThreshold(Duration.ofSeconds(1))
+   *         .setFlowControlSettings(
+   *             FlowControlSettings.newBuilder()
+   *                 .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
+   *                 .setMaxOutstandingRequestBytes(100L * 1024 * 1024)
+   *                 .setMaxOutstandingElementCount(1_000L)
+   *                 .build())
+   *         .build();
+   * }</pre>
+   */
+  public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
+      String tableId, BatchingSettings batchingSettings) {
+    Preconditions.checkNotNull(tableId, "tableId can't be null");
+    Preconditions.checkArgument(!tableId.isEmpty(), "tableId can't be empty");
+
+    final String tableName = NameUtil.formatTableName(settings.getProjectId(),
+        settings.getInstanceId(), tableId);
+
+    if(batchingSettings == null) {
+      batchingSettings = baseBatchingSettings;
+    }
+
+    BatchingDescriptor<MutateRowsRequest.Entry, MutateRowsResponse.Entry, MutateRowsRequest,
+        MutateRowsResponse> batchingDescriptor = new MutateRowsEntryBatchingDescriptor(tableName,
+        settings.getAppProfileId());
+
+    return new EntryBatcherFactory<>(
+        batchingDescriptor,
+        settings.getExecutorProvider().getExecutor(),
+        batchingSettings
+    ).createStreamBatcher(stub.mutateRowsCallable());
+  }
+
+  /**
+   *  We can create {@link EntryBatcherFactory} with a {@link SpoolingCallable} like this:
+   *
+   BatchingDescriptor<MutateRowsRequest.Entry, MutateRowsResponse.Entry, MutateRowsRequest,
+   List<MutateRowsResponse>> spoolingBatchingDescriptor =
+   new MutateRowsUnaryBatchingDescriptor(tableName, settings.getAppProfileId());
+
+   return new EntryBatcherFactory<>(
+   spoolingBatchingDescriptor,
+   settings.getExecutorProvider().getExecutor(),
+   batchingSettings).createUnaryBatcher(stub.mutateRowsCallable().all());
+   */
 
   /**
    * Creates a callable chain to handle point ReadRows RPCs. The chain will:
@@ -339,6 +419,7 @@ public class EnhancedBigtableStub implements AutoCloseable {
    */
   private UnaryCallable<RowMutation, Void> createBulkMutateRowsBatchingCallable() {
     UnaryCallable<MutateRowsRequest, Void> baseCallable = createMutateRowsBaseCallable();
+
 
     BatchingCallSettings.Builder<MutateRowsRequest, Void> batchingCallSettings =
         BatchingCallSettings.newBuilder(new MutateRowsBatchingDescriptor())

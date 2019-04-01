@@ -18,11 +18,15 @@ package com.google.cloud.bigtable.data.v2;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.BetaApi;
 import com.google.api.core.InternalApi;
+import com.google.api.gax.batching.BatchingSettings;
+import com.google.api.gax.batching.v2.Batcher;
 import com.google.api.gax.rpc.ApiExceptions;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.ServerStream;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
+import com.google.bigtable.v2.MutateRowsRequest;
+import com.google.bigtable.v2.MutateRowsResponse;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.BulkMutationBatcher;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
@@ -870,6 +874,79 @@ public class BigtableDataClient implements AutoCloseable {
   @BetaApi("This surface is likely to change as the batching surface evolves.")
   public BulkMutationBatcher newBulkMutationBatcher() {
     return new BulkMutationBatcher(stub.bulkMutateRowsBatchingCallable());
+  }
+
+  /**
+   * Mutates entries of a row in batch.
+   *
+   * <p>Sample code:
+   *
+   * <pre>{@code
+   * try (BigtableDataClient bigtableDataClient = BigtableDataClient.create("[PROJECT]", "[INSTANCE]")) {
+   *   try (Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> batcher =
+   *     bigtableDataClient.createMutateRowsRequestBatcher("[TABLE]")) {
+   *     for (String someValue : someCollection) {
+   *      MutateRowsRequest.Entry entry =
+   *             MutateRowsRequest.Entry.newBuilder()
+   *                 .setRowKey("[ROW KEY]")
+   *                 .addMutations(
+   *                     Mutation.newBuilder()
+   *                         .setSetCell(
+   *                             Mutation.SetCell.newBuilder()
+   *                                 .setFamilyName("[FAMILY NAME]")
+   *                                 .setColumnQualifier("[QUALIFIER]")
+   *                                 .setTimestampMicros("[TIMESTAMP]")
+   *                                 .setValue("[VALUE]")
+   *                                 .build()))
+   *                 .build();
+   *
+   *       ApiFuture<MutateRowsResponse.Entry> entryFuture = batcher.add(mutation);
+   *     }
+   *   }
+   *   // After `batcher` is closed, all mutations have been applied
+   * }
+   * }</pre>
+   */
+  public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
+      final String tableId) {
+    return createMutateRowsRequestBatcher(tableId, null);
+  }
+
+  /**
+   * Mutates entries of a row in batch.
+   *
+   * <p>Sample code:
+   *
+   * <pre>{@code
+   * try (BigtableDataClient bigtableDataClient = BigtableDataClient.create("[PROJECT]", "[INSTANCE]")) {
+   *   try (Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> batcher =
+   *     bigtableDataClient.createMutateRowsRequestBatcher("[TABLE]", "[BATCH-SETTINGS]")) {
+   *     for (String someValue : someCollection) {
+   *      MutateRowsRequest.Entry entry =
+   *             MutateRowsRequest.Entry.newBuilder()
+   *                 .setRowKey("[ROW KEY]")
+   *                 .addMutations(
+   *                     Mutation.newBuilder()
+   *                         .setSetCell(
+   *                             Mutation.SetCell.newBuilder()
+   *                                 .setFamilyName("[FAMILY NAME]")
+   *                                 .setColumnQualifier("[QUALIFIER]")
+   *                                 .setTimestampMicros("[TIMESTAMP]")
+   *                                 .setValue("[VALUE]")
+   *                                 .build()))
+   *                 .build();
+   *
+   *       ApiFuture<MutateRowsResponse.Entry> entryFuture = batcher.add(mutation);
+   *     }
+   *   }
+   *   // After `batcher` is closed, all mutations have been applied
+   * }
+   * }</pre>
+   */
+  public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
+      final String tableId, BatchingSettings batchingSettings) {
+
+    return stub.createMutateRowsRequestBatcher(tableId, batchingSettings);
   }
 
   /**

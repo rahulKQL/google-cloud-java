@@ -17,6 +17,7 @@ package com.google.cloud.bigtable.data.v2.it;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.api.core.ApiFuture;
 import com.google.cloud.bigtable.data.v2.it.env.TestEnvRule;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
@@ -46,6 +47,15 @@ public class MutateRowIT {
                 .setCell(familyId, "q2", "myVal2")
                 .setCell(familyId, "q3", "myVal3"))
         .get(1, TimeUnit.MINUTES);
+
+    ApiFuture<Void> future = testEnvRule
+        .env().getDataClient().mutateRowAsync(
+       RowMutation.create(testEnvRule.env().getTableId(), rowKey)
+                    .setCell(familyId, "q", "SomeOtherVal")
+                    .setCell(familyId, "q2", "SomeOtherVal2")
+                    .setCell(familyId, "q3", "SomeOtherVal3"));
+
+    future.cancel(true);
 
     testEnvRule
         .env()

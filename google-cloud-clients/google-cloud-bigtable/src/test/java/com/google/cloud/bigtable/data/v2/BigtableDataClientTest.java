@@ -22,11 +22,15 @@ import static org.mockito.Matchers.any;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.api.core.SettableApiFuture;
+import com.google.api.gax.batching.BatchingSettings;
+import com.google.api.gax.batching.v2.Batcher;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
+import com.google.bigtable.v2.MutateRowsRequest;
+import com.google.bigtable.v2.MutateRowsResponse;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.BulkMutationBatcher;
 import com.google.cloud.bigtable.data.v2.models.BulkMutationBatcher.BulkMutationFailure;
@@ -61,6 +65,7 @@ import org.threeten.bp.Duration;
 @RunWith(MockitoJUnitRunner.class)
 public class BigtableDataClientTest {
   @Mock private EnhancedBigtableStub mockStub;
+  @Mock private BatchingSettings batchingSettings;
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   private ServerStreamingCallable<Query, Row> mockReadRowsCallable;
@@ -72,6 +77,7 @@ public class BigtableDataClientTest {
   @Mock private UnaryCallable<ReadModifyWriteRow, Row> mockReadModifyWriteRowCallable;
   @Mock private UnaryCallable<BulkMutation, Void> mockBulkMutateRowsCallable;
   @Mock private UnaryCallable<RowMutation, Void> mockBulkMutateRowsBatchingCallable;
+  @Mock private Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> mockCreateMutateRowsRequestBatcher;
 
   private BigtableDataClient bigtableDataClient;
 
@@ -87,6 +93,8 @@ public class BigtableDataClientTest {
         .thenReturn(mockBulkMutateRowsBatchingCallable);
     Mockito.when(mockStub.checkAndMutateRowCallable()).thenReturn(mockCheckAndMutateRowCallable);
     Mockito.when(mockStub.readModifyWriteRowCallable()).thenReturn(mockReadModifyWriteRowCallable);
+    Mockito.when(mockStub.createMutateRowsRequestBatcher("fake-table", batchingSettings))
+        .thenReturn(mockCreateMutateRowsRequestBatcher);
   }
 
   @Test
@@ -456,5 +464,21 @@ public class BigtableDataClientTest {
   public void proxyReadModifyWriterRowCallableTest() {
     assertThat(bigtableDataClient.readModifyWriteRowCallable())
         .isSameAs(mockReadModifyWriteRowCallable);
+  }
+
+  @Test
+  public void createMutateRowsRequestBatcherWithSettingsTest(){
+    assertThat(bigtableDataClient.createMutateRowsRequestBatcher("fake-table", batchingSettings))
+        .isSameAs(mockCreateMutateRowsRequestBatcher);
+    Mockito.verify(mockStub.createMutateRowsRequestBatcher("fake-table", batchingSettings));
+  }
+
+  @Test
+  public void createMutateRowsRequestBatcherWithTableIdOnlyTest(){
+    Mockito.when(mockStub.createMutateRowsRequestBatcher("fake-table", null))
+        .thenReturn(mockCreateMutateRowsRequestBatcher);
+    assertThat(bigtableDataClient.createMutateRowsRequestBatcher("fake-table"))
+        .isSameAs(mockCreateMutateRowsRequestBatcher);
+    Mockito.verify(mockStub.checkAndMutateRowCallable());
   }
 }
