@@ -16,6 +16,8 @@
 package com.google.cloud.bigtable.data.v2.stub;
 
 import com.google.api.core.InternalApi;
+import com.google.api.gax.batching.v2.Batcher;
+import com.google.api.gax.batching.v2.BatcherFactory;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
 import com.google.api.gax.retrying.RetryAlgorithm;
 import com.google.api.gax.retrying.RetryingExecutorWithContext;
@@ -31,6 +33,7 @@ import com.google.api.gax.tracing.TracedBatchingCallable;
 import com.google.api.gax.tracing.TracedServerStreamingCallable;
 import com.google.api.gax.tracing.TracedUnaryCallable;
 import com.google.bigtable.v2.MutateRowsRequest;
+import com.google.bigtable.v2.MutateRowsResponse;
 import com.google.bigtable.v2.ReadRowsRequest;
 import com.google.bigtable.v2.SampleRowKeysRequest;
 import com.google.bigtable.v2.SampleRowKeysResponse;
@@ -55,6 +58,7 @@ import com.google.cloud.bigtable.data.v2.stub.readrows.ReadRowsUserCallable;
 import com.google.cloud.bigtable.data.v2.stub.readrows.RowMergingCallable;
 import com.google.cloud.bigtable.gaxx.retrying.ApiResultRetryAlgorithm;
 import com.google.cloud.bigtable.gaxx.tracing.WrappedTracerFactory;
+import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.List;
 import org.threeten.bp.Duration;
@@ -89,7 +93,6 @@ public class EnhancedBigtableStub implements AutoCloseable {
   private final UnaryCallable<RowMutation, Void> bulkMutateRowsBatchingCallable;
   private final UnaryCallable<ConditionalRowMutation, Boolean> checkAndMutateRowCallable;
   private final UnaryCallable<ReadModifyWriteRow, Row> readModifyWriteRowCallable;
-
   public static EnhancedBigtableStub create(EnhancedBigtableStubSettings settings)
       throws IOException {
     // Configure the base settings
@@ -481,6 +484,24 @@ public class EnhancedBigtableStub implements AutoCloseable {
   public UnaryCallable<RowMutation, Void> bulkMutateRowsBatchingCallable() {
     return bulkMutateRowsBatchingCallable;
   }
+
+/**
+ * This operation creates an {@link Batcher}, which is public interface to perform batching.
+ */
+public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
+    String tableName) {
+  Preconditions.checkNotNull(tableName, "tableName can't be null");
+  Preconditions.checkArgument(!tableName.isEmpty(), "tableName can't be empty");
+
+  MutateRowsRequest prototypeReq = MutateRowsRequest.newBuilder().setTableName(tableName).build();
+
+  return new BatcherFactory<>(
+      settings.entryBatchingCallSettings(),
+      clientContext.getExecutor(),
+      stub.mutateRowsCallable().all(),
+      prototypeReq
+  ).createBatcher();
+}
 
   /**
    * Returns the callable chain created in {@link #createCheckAndMutateRowCallable()} during stub

@@ -19,6 +19,7 @@ import com.google.api.core.InternalApi;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
+import com.google.api.gax.batching.v2.BatcherSettings;
 import com.google.api.gax.core.GaxProperties;
 import com.google.api.gax.core.GoogleCredentialsProvider;
 import com.google.api.gax.grpc.GaxGrpcProperties;
@@ -31,6 +32,8 @@ import com.google.api.gax.rpc.StubSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
 import com.google.api.gax.tracing.OpencensusTracerFactory;
+import com.google.bigtable.v2.MutateRowsRequest;
+import com.google.bigtable.v2.MutateRowsResponse;
 import com.google.cloud.bigtable.data.v2.internal.DummyBatchingDescriptor;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.KeyOffset;
@@ -38,6 +41,7 @@ import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.ReadModifyWriteRow;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsEntryBatchingDescriptor;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -87,6 +91,9 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private static final Set<Code> DEFAULT_RETRY_CODES =
       ImmutableSet.of(Code.DEADLINE_EXCEEDED, Code.UNAVAILABLE, Code.ABORTED);
 
+  private static final MutateRowsEntryBatchingDescriptor DEFAULT_BATCHING_DESC =
+      new MutateRowsEntryBatchingDescriptor();
+
   // Copy of default retrying settings in the yaml
   private static final RetrySettings DEFAULT_RETRY_SETTINGS =
       RetrySettings.newBuilder()
@@ -122,6 +129,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private final UnaryCallSettings<String, List<KeyOffset>> sampleRowKeysSettings;
   private final UnaryCallSettings<RowMutation, Void> mutateRowSettings;
   private final BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings;
+  private final BatcherSettings<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
+        MutateRowsRequest, List<MutateRowsResponse>> mutateBatcherSettings;
   private final UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings;
   private final UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
 
@@ -147,6 +156,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     sampleRowKeysSettings = builder.sampleRowKeysSettings.build();
     mutateRowSettings = builder.mutateRowSettings.build();
     bulkMutateRowsSettings = builder.bulkMutateRowsSettings.build();
+    mutateBatcherSettings = builder.batchMutaterSettings.build();
     checkAndMutateRowSettings = builder.checkAndMutateRowSettings.build();
     readModifyWriteRowSettings = builder.readModifyWriteRowSettings.build();
   }
@@ -221,6 +231,11 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     return bulkMutateRowsSettings;
   }
 
+  public BatcherSettings<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
+      MutateRowsRequest, List<MutateRowsResponse>> entryBatchingCallSettings(){
+    return mutateBatcherSettings;
+  }
+
   /** Returns the object with the settings used for calls to CheckAndMutateRow. */
   public UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings() {
     return checkAndMutateRowSettings;
@@ -248,6 +263,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<String, List<KeyOffset>> sampleRowKeysSettings;
     private final UnaryCallSettings.Builder<RowMutation, Void> mutateRowSettings;
     private final BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings;
+    private final BatcherSettings.Builder<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
+        MutateRowsRequest, List<MutateRowsResponse>> batchMutaterSettings;
     private final UnaryCallSettings.Builder<ConditionalRowMutation, Boolean>
         checkAndMutateRowSettings;
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
@@ -324,6 +341,23 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
                               .build())
                       .build());
 
+      batchMutaterSettings =
+          BatcherSettings.newBuilder(new MutateRowsEntryBatchingDescriptor())
+          .setRetryableCodes(DEFAULT_RETRY_CODES)
+          .setRetrySettings(DEFAULT_RETRY_SETTINGS)
+          .setBatchingSettings(BatchingSettings.newBuilder()
+              .setIsEnabled(true)
+              .setElementCountThreshold(100L)
+              .setRequestByteThreshold(20L * 1024 * 1024)
+              .setDelayThreshold(Duration.ofSeconds(1))
+              .setFlowControlSettings(
+                  FlowControlSettings.newBuilder()
+                  .setLimitExceededBehavior(LimitExceededBehavior.Block)
+                  .setMaxOutstandingRequestBytes(100L * 1024 * 1024)
+                  .setMaxOutstandingElementCount(1_000L)
+                      .build())
+              .build());
+
       checkAndMutateRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       copyRetrySettings(baseDefaults.checkAndMutateRowSettings(), checkAndMutateRowSettings);
 
@@ -343,6 +377,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       sampleRowKeysSettings = settings.sampleRowKeysSettings.toBuilder();
       mutateRowSettings = settings.mutateRowSettings.toBuilder();
       bulkMutateRowsSettings = settings.bulkMutateRowsSettings.toBuilder();
+      batchMutaterSettings = settings.mutateBatcherSettings.toBuilder();
       checkAndMutateRowSettings = settings.checkAndMutateRowSettings.toBuilder();
       readModifyWriteRowSettings = settings.readModifyWriteRowSettings.toBuilder();
     }
