@@ -108,13 +108,13 @@ public class GrpcBigtableStub extends BigtableStub {
               .setResponseMarshaller(
                   ProtoUtils.marshaller(ReadModifyWriteRowResponse.getDefaultInstance()))
               .build();
-
   private final BackgroundResource backgroundResources;
 
   private final ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable;
   private final ServerStreamingCallable<SampleRowKeysRequest, SampleRowKeysResponse>
       sampleRowKeysCallable;
   private final UnaryCallable<MutateRowRequest, MutateRowResponse> mutateRowCallable;
+  private final UnaryCallable<MutateRowsRequest, MutateRowsResponse> batchMutatorCallable;
   private final ServerStreamingCallable<MutateRowsRequest, MutateRowsResponse> mutateRowsCallable;
   private final UnaryCallable<CheckAndMutateRowRequest, CheckAndMutateRowResponse>
       checkAndMutateRowCallable;
@@ -247,6 +247,9 @@ public class GrpcBigtableStub extends BigtableStub {
     this.mutateRowCallable =
         callableFactory.createUnaryCallable(
             mutateRowTransportSettings, settings.mutateRowSettings(), clientContext);
+    this.batchMutatorCallable =
+        callableFactory.createUnaryCallable(mutateRowsTransportSettings,
+            settings.batchMutatorSettings(), clientContext);
     this.mutateRowsCallable =
         callableFactory.createServerStreamingCallable(
             mutateRowsTransportSettings, settings.mutateRowsSettings(), clientContext);
@@ -279,6 +282,10 @@ public class GrpcBigtableStub extends BigtableStub {
 
   public ServerStreamingCallable<MutateRowsRequest, MutateRowsResponse> mutateRowsCallable() {
     return mutateRowsCallable;
+  }
+
+  public UnaryCallable<MutateRowsRequest, MutateRowsResponse> batchMutatorCallable(){
+    return batchMutatorCallable;
   }
 
   public UnaryCallable<CheckAndMutateRowRequest, CheckAndMutateRowResponse>

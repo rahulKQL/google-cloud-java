@@ -130,7 +130,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private final UnaryCallSettings<RowMutation, Void> mutateRowSettings;
   private final BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings;
   private final BatcherSettings<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
-        MutateRowsRequest, List<MutateRowsResponse>> mutateBatcherSettings;
+        MutateRowsRequest, MutateRowsResponse> batchMutatorSettings;
   private final UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings;
   private final UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
 
@@ -156,7 +156,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     sampleRowKeysSettings = builder.sampleRowKeysSettings.build();
     mutateRowSettings = builder.mutateRowSettings.build();
     bulkMutateRowsSettings = builder.bulkMutateRowsSettings.build();
-    mutateBatcherSettings = builder.batchMutaterSettings.build();
+    batchMutatorSettings = builder.batchMutatorSettings.build();
     checkAndMutateRowSettings = builder.checkAndMutateRowSettings.build();
     readModifyWriteRowSettings = builder.readModifyWriteRowSettings.build();
   }
@@ -232,8 +232,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   }
 
   public BatcherSettings<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
-      MutateRowsRequest, List<MutateRowsResponse>> entryBatchingCallSettings(){
-    return mutateBatcherSettings;
+      MutateRowsRequest, MutateRowsResponse> batchMutatorSettings(){
+    return batchMutatorSettings;
   }
 
   /** Returns the object with the settings used for calls to CheckAndMutateRow. */
@@ -264,7 +264,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<RowMutation, Void> mutateRowSettings;
     private final BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings;
     private final BatcherSettings.Builder<MutateRowsRequest.Entry, MutateRowsResponse.Entry,
-        MutateRowsRequest, List<MutateRowsResponse>> batchMutaterSettings;
+        MutateRowsRequest, MutateRowsResponse> batchMutatorSettings;
     private final UnaryCallSettings.Builder<ConditionalRowMutation, Boolean>
         checkAndMutateRowSettings;
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
@@ -341,13 +341,12 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
                               .build())
                       .build());
 
-      batchMutaterSettings =
+      batchMutatorSettings =
           BatcherSettings.newBuilder(new MutateRowsEntryBatchingDescriptor())
           .setRetryableCodes(DEFAULT_RETRY_CODES)
           .setRetrySettings(DEFAULT_RETRY_SETTINGS)
           .setBatchingSettings(BatchingSettings.newBuilder()
-              .setIsEnabled(true)
-              .setElementCountThreshold(100L)
+              .setElementCountThreshold(1_000L)
               .setRequestByteThreshold(20L * 1024 * 1024)
               .setDelayThreshold(Duration.ofSeconds(1))
               .setFlowControlSettings(
@@ -377,7 +376,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       sampleRowKeysSettings = settings.sampleRowKeysSettings.toBuilder();
       mutateRowSettings = settings.mutateRowSettings.toBuilder();
       bulkMutateRowsSettings = settings.bulkMutateRowsSettings.toBuilder();
-      batchMutaterSettings = settings.mutateBatcherSettings.toBuilder();
+      batchMutatorSettings = settings.batchMutatorSettings.toBuilder();
       checkAndMutateRowSettings = settings.checkAndMutateRowSettings.toBuilder();
       readModifyWriteRowSettings = settings.readModifyWriteRowSettings.toBuilder();
     }

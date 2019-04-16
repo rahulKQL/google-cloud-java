@@ -89,6 +89,7 @@ public class EnhancedBigtableStub implements AutoCloseable {
   private final UnaryCallable<Query, Row> readRowCallable;
   private final UnaryCallable<String, List<KeyOffset>> sampleRowKeysCallable;
   private final UnaryCallable<RowMutation, Void> mutateRowCallable;
+  private final UnaryCallable<MutateRowsRequest, MutateRowsResponse> batchMutatorCallable;
   private final UnaryCallable<BulkMutation, Void> bulkMutateRowsCallable;
   private final UnaryCallable<RowMutation, Void> bulkMutateRowsBatchingCallable;
   private final UnaryCallable<ConditionalRowMutation, Boolean> checkAndMutateRowCallable;
@@ -174,6 +175,7 @@ public class EnhancedBigtableStub implements AutoCloseable {
     readRowCallable = createReadRowCallable(new DefaultRowAdapter());
     sampleRowKeysCallable = createSampleRowKeysCallable();
     mutateRowCallable = createMutateRowCallable();
+    batchMutatorCallable = createBatchMuatorCallable();
     bulkMutateRowsCallable = createBulkMutateRowsCallable();
     bulkMutateRowsBatchingCallable = createBulkMutateRowsBatchingCallable();
     checkAndMutateRowCallable = createCheckAndMutateRowCallable();
@@ -300,6 +302,13 @@ public class EnhancedBigtableStub implements AutoCloseable {
   private UnaryCallable<RowMutation, Void> createMutateRowCallable() {
     return createUserFacingUnaryCallable(
         "MutateRow", new MutateRowCallable(stub.mutateRowCallable(), requestContext));
+  }
+
+  /**
+   * Creates a callable to handle Batching related RPCs.
+   */
+  private UnaryCallable<MutateRowsRequest, MutateRowsResponse> createBatchMuatorCallable(){
+    return createUserFacingUnaryCallable("batchMutator", stub.batchMutatorCallable());
   }
 
   /**
@@ -496,9 +505,9 @@ public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRo
   MutateRowsRequest prototypeReq = MutateRowsRequest.newBuilder().setTableName(tableName).build();
 
   return new BatcherFactory<>(
-      settings.entryBatchingCallSettings(),
+      settings.batchMutatorSettings(),
       clientContext.getExecutor(),
-      stub.mutateRowsCallable().all(),
+      stub.batchMutatorCallable(),
       prototypeReq
   ).createBatcher();
 }

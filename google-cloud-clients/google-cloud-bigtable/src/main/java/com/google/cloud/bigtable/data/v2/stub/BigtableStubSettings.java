@@ -96,6 +96,7 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
   private final ServerStreamingCallSettings<SampleRowKeysRequest, SampleRowKeysResponse>
       sampleRowKeysSettings;
   private final UnaryCallSettings<MutateRowRequest, MutateRowResponse> mutateRowSettings;
+  private final UnaryCallSettings<MutateRowsRequest, MutateRowsResponse> batchMutatorSettings;
   private final ServerStreamingCallSettings<MutateRowsRequest, MutateRowsResponse>
       mutateRowsSettings;
   private final UnaryCallSettings<CheckAndMutateRowRequest, CheckAndMutateRowResponse>
@@ -122,6 +123,11 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
   /** Returns the object with the settings used for calls to mutateRows. */
   public ServerStreamingCallSettings<MutateRowsRequest, MutateRowsResponse> mutateRowsSettings() {
     return mutateRowsSettings;
+  }
+
+  /** Returns the object with the settings used for batching mutation. */
+  public UnaryCallSettings<MutateRowsRequest, MutateRowsResponse> batchMutatorSettings() {
+    return batchMutatorSettings;
   }
 
   /** Returns the object with the settings used for calls to checkAndMutateRow. */
@@ -207,6 +213,7 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
     sampleRowKeysSettings = settingsBuilder.sampleRowKeysSettings().build();
     mutateRowSettings = settingsBuilder.mutateRowSettings().build();
     mutateRowsSettings = settingsBuilder.mutateRowsSettings().build();
+    batchMutatorSettings = settingsBuilder.batchMutatorSettings().build();
     checkAndMutateRowSettings = settingsBuilder.checkAndMutateRowSettings().build();
     readModifyWriteRowSettings = settingsBuilder.readModifyWriteRowSettings().build();
   }
@@ -220,6 +227,7 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
     private final ServerStreamingCallSettings.Builder<SampleRowKeysRequest, SampleRowKeysResponse>
         sampleRowKeysSettings;
     private final UnaryCallSettings.Builder<MutateRowRequest, MutateRowResponse> mutateRowSettings;
+    private final UnaryCallSettings.Builder<MutateRowsRequest, MutateRowsResponse> batchMutatorSettings;
     private final ServerStreamingCallSettings.Builder<MutateRowsRequest, MutateRowsResponse>
         mutateRowsSettings;
     private final UnaryCallSettings.Builder<CheckAndMutateRowRequest, CheckAndMutateRowResponse>
@@ -285,6 +293,8 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
 
       mutateRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
 
+      batchMutatorSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+
       mutateRowsSettings = ServerStreamingCallSettings.newBuilder();
 
       checkAndMutateRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
@@ -348,6 +358,7 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
       readRowsSettings = settings.readRowsSettings.toBuilder();
       sampleRowKeysSettings = settings.sampleRowKeysSettings.toBuilder();
       mutateRowSettings = settings.mutateRowSettings.toBuilder();
+      batchMutatorSettings = settings.batchMutatorSettings.toBuilder();
       mutateRowsSettings = settings.mutateRowsSettings.toBuilder();
       checkAndMutateRowSettings = settings.checkAndMutateRowSettings.toBuilder();
       readModifyWriteRowSettings = settings.readModifyWriteRowSettings.toBuilder();
@@ -390,6 +401,10 @@ public class BigtableStubSettings extends StubSettings<BigtableStubSettings> {
       return mutateRowSettings;
     }
 
+    /** Returns the builder for the settings used for batching mutations. */
+    public UnaryCallSettings.Builder<MutateRowsRequest, MutateRowsResponse> batchMutatorSettings() {
+      return batchMutatorSettings;
+    }
     /** Returns the builder for the settings used for calls to mutateRows. */
     public ServerStreamingCallSettings.Builder<MutateRowsRequest, MutateRowsResponse>
         mutateRowsSettings() {

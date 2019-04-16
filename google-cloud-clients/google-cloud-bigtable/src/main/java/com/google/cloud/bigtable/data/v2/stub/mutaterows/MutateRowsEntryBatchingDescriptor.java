@@ -24,7 +24,7 @@ package com.google.cloud.bigtable.data.v2.stub.mutaterows;
 
 public class MutateRowsEntryBatchingDescriptor implements
     BatchingDescriptor<MutateRowsRequest.Entry, MutateRowsResponse.Entry, MutateRowsRequest,
-        List<MutateRowsResponse>> {
+        MutateRowsResponse> {
 
   @Override
   public RequestBuilder<MutateRowsRequest.Entry, MutateRowsRequest> newRequestBuilder(
@@ -46,13 +46,10 @@ public class MutateRowsEntryBatchingDescriptor implements
   }
 
   @Override
-  public void splitResponse(List<MutateRowsResponse> rows,
+  public void splitResponse(MutateRowsResponse response,
       List<SettableApiFuture<MutateRowsResponse.Entry>> list) {
-    int i= 0;
-    for(MutateRowsResponse response : rows){
-      for(int j=0; j < response.getEntriesCount(); i++, j++){
-        list.get(i).set(response.getEntries(j));
-      }
+    for (int i = 0; i < response.getEntriesCount(); i++) {
+      list.get(i).set(response.getEntries(i));
     }
   }
 
