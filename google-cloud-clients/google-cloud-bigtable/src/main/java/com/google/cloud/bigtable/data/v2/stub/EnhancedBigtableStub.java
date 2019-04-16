@@ -17,7 +17,7 @@ package com.google.cloud.bigtable.data.v2.stub;
 
 import com.google.api.core.InternalApi;
 import com.google.api.gax.batching.v2.Batcher;
-import com.google.api.gax.batching.v2.BatcherFactory;
+import com.google.api.gax.batching.v2.BatcherImpl;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
 import com.google.api.gax.retrying.RetryAlgorithm;
 import com.google.api.gax.retrying.RetryingExecutorWithContext;
@@ -494,23 +494,23 @@ public class EnhancedBigtableStub implements AutoCloseable {
     return bulkMutateRowsBatchingCallable;
   }
 
-/**
- * This operation creates an {@link Batcher}, which is public interface to perform batching.
- */
-public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
-    String tableName) {
-  Preconditions.checkNotNull(tableName, "tableName can't be null");
-  Preconditions.checkArgument(!tableName.isEmpty(), "tableName can't be empty");
+  /**
+   * This operation creates an {@link Batcher}, which is public interface to perform batching.
+   */
+  public Batcher<MutateRowsRequest.Entry, MutateRowsResponse.Entry> createMutateRowsRequestBatcher(
+      String tableName) {
+    Preconditions.checkNotNull(tableName, "tableName can't be null");
+    Preconditions.checkArgument(!tableName.isEmpty(), "tableName can't be empty");
 
-  MutateRowsRequest prototypeReq = MutateRowsRequest.newBuilder().setTableName(tableName).build();
+    MutateRowsRequest prototypeReq = MutateRowsRequest.newBuilder().setTableName(tableName).build();
 
-  return new BatcherFactory<>(
-      settings.batchMutatorSettings(),
-      clientContext.getExecutor(),
-      stub.batchMutatorCallable(),
-      prototypeReq
-  ).createBatcher();
-}
+    return BatcherImpl.<MutateRowsRequest.Entry, MutateRowsResponse.Entry, MutateRowsRequest, MutateRowsResponse>newBuilder()
+        .setExecutor(clientContext.getExecutor())
+        .setBatcherSettings(settings.batchMutatorSettings())
+        .setUnaryCallable(stub.batchMutatorCallable())
+        .setPrototype(prototypeReq)
+        .build();
+  }
 
   /**
    * Returns the callable chain created in {@link #createCheckAndMutateRowCallable()} during stub
