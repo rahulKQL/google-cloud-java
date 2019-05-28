@@ -55,24 +55,12 @@ import org.threeten.bp.Duration;
  *   <li>The default service address (bigtable.googleapis.com) and default port (443) are used.
  *   <li>Credentials are acquired automatically through Application Default Credentials.
  *   <li>Retries are configured for idempotent methods but not for non-idempotent methods.
- *   <li>These are the default timeouts used Bigtable operations.
- *       <ul>
- *         For non-streaming operations i.e. {@link #readRowSettings()}, {@link
- *         #sampleRowKeysSettings()}, {@link #checkAndMutateRowSettings()} {@link
- *         #mutateRowSettings()}, {@link #bulkMutateRowsSettings()} {@link
- *         #readModifyWriteRowSettings()}:
- *         <li>Default timeout for {@link RetrySettings#getInitialRpcTimeout()} is 20_000ms.
- *         <li>Default timeout for {@link RetrySettings#getMaxAttempts()} is 20_000ms.
- *         <li>Default timeout for {@link RetrySettings#getTotalTimeout()} is 600_000ms or 10min.
- *       </ul>
- *       <ul>
- *         For streaming operation i.e. {@link #readRowsSettings()}:
- *         <li>Default timeout for {@link ServerStreamingCallSettings#getIdleTimeout()} is
- *             300_000ms.
- *         <li>Default timeout for {@link RetrySettings#getInitialRpcTimeout()} is 20_000ms.
- *         <li>Default timeout for {@link RetrySettings#getMaxAttempts()} is 20_000ms.
- *         <li>Default timeout for {@link RetrySettings#getTotalTimeout()} is 3_600_000ms or 60min.
- *       </ul>
+ *   <li>In case of streaming operation RPC timeout applies to each row and for the non-streaming
+ *       operations rpc timeout considered as deadline of each call.
+ *   <li>Each setting operation accepts RPC and total timeout, Here rpc timeouts are for each
+ *       attempts to get the result whereas totalTimeout applies as operation timeout.
+ *   <li>RetryDelayMultiplier controls the change in retry delay. After initial attempt, subsequent
+ *       attempts are calculated by multiplying the retry delay of previous call.
  * </ul>
  *
  * <p>The only required setting is the instance name.
@@ -203,22 +191,102 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
         .setJwtEnabledScopes(JWT_ENABLED_SCOPES);
   }
 
-  /** Returns the object with the settings used for calls to ReadRows. */
+  /**
+   * Returns the object with the settings used for calls to ReadRows.
+   *
+   * <p>This is idempotent and streaming operation. Retries will be attempted if RPC failed with
+   * {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   *
+   * <p>The idle timeout is configured via {@code ServerStreamingCallSettings#getIdleTimeout}. This
+   * timer will terminate any stream that has not has seen any demand or activity in the configured
+   * interval. To turn off idle checks, set the idleTimeout to {@link Duration#ZERO}.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 60 min or 1 hour.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public ServerStreamingCallSettings<Query, Row> readRowsSettings() {
     return readRowsSettings;
   }
 
-  /** Returns the object with the settings used for calls to SampleRowKeys. */
+  /**
+   * Returns the object with the settings used for calls to SampleRowKeys.
+   *
+   * <p>This is idempotent and non-streaming operation. Retries will be attempted if RPC failed with
+   * {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public UnaryCallSettings<String, List<KeyOffset>> sampleRowKeysSettings() {
     return sampleRowKeysSettings;
   }
 
-  /** Returns the object with the settings used for point reads via ReadRows. */
+  /**
+   * Returns the object with the settings used for point reads via ReadRows.
+   *
+   * <p>This is an idempotent and non-streaming operation. Retries will be attempted if RPC failed
+   * with {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public UnaryCallSettings<Query, Row> readRowSettings() {
     return readRowSettings;
   }
 
-  /** Returns the object with the settings used for calls to MutateRow. */
+  /**
+   * Returns the object with the settings used for calls to MutateRow.
+   *
+   * <p>This is an idempotent and non-streaming operation. Retries will be attempted if RPC failed
+   * with {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public UnaryCallSettings<RowMutation, Void> mutateRowSettings() {
     return mutateRowSettings;
   }
@@ -229,17 +297,85 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Please note that these settings will affect both manually batched calls
    * (bulkMutateRowsCallable) and automatic batched calls (bulkMutateRowsBatchingCallable). The
    * {@link RowMutation} request signature is ignored for the manual batched calls.
+   *
+   * <p>Retries will be attempted if RPC are failed with {@link Code#DEADLINE_EXCEEDED}, {@link
+   * Code#UNAVAILABLE} and {@link Code#ABORTED} failure code.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * <p>On breach of certain triggers, this batch will initiates processing of accumulated requests.
+   * These triggered could be configured via {@link BatchingSettings}. Currently it triggers when:
+   *
+   * <ul>
+   *   <li>100 or more requests are sent.
+   *   <li>Requests size reaches to 20MB.
+   *   <li>An interval of 1 second passes after batching initialization or last processed batch.
+   * </ul>
+   *
+   * <p>When size of the request in processing state reaches 100MB Or their count reaches 1000 then
+   * the batching are blocked from adding new values into the ongoing batch.
+   *
+   * @see RetrySettings for more explanation.
+   * @see BatchingSettings for batch related configuration explanation.
    */
   public BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings() {
     return bulkMutateRowsSettings;
   }
 
-  /** Returns the object with the settings used for calls to CheckAndMutateRow. */
+  /**
+   * Returns the object with the settings used for calls to CheckAndMutateRow.
+   *
+   * <p>This is a non-idempotent and non-streaming operation. By default no retries will be
+   * attempted in case of RPC failure.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings() {
     return checkAndMutateRowSettings;
   }
 
-  /** Returns the object with the settings used for calls to ReadModifyWriteRow. */
+  /**
+   * Returns the object with the settings used for calls to ReadModifyWriteRow.
+   *
+   * <p>This is a non-idempotent and non-streaming operation. By default no retries will be
+   * attempted in case of RPC failure.
+   *
+   * <p>Default retry values for this operation are:
+   *
+   * <ul>
+   *   <li>InitialRetryDelay is 0.1 seconds.
+   *   <li>RetryDelayMultiplier is 1.3 times.
+   *   <li>MaxRetryDelay is 60 seconds.
+   *   <li>InitialRpcTimeout is 20 seconds.
+   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
+   *   <li>MaxRpcTimeout is 20 seconds.
+   *   <li>TotalTimeout is 600 seconds or 10 min.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   */
   public UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings() {
     return readModifyWriteRowSettings;
   }
