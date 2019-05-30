@@ -194,24 +194,21 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for calls to ReadRows.
    *
-   * <p>This is idempotent and streaming operation. Retries will be attempted if RPC failed with
-   * {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   * <p>This is idempotent and streaming operation.
    *
    * <p>The idle timeout is configured via {@code ServerStreamingCallSettings#getIdleTimeout}. This
    * timer will terminate any stream that has not has seen any demand or activity in the configured
    * interval. To turn off idle checks, set the idleTimeout to {@link Duration#ZERO}.
    *
-   * <p>Default retry values for this operation are:
+   * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
+   * Code#UNAVAILABLE} failure code.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 60 min or 1 hour.
-   * </ul>
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * reattempt till a max retry timeout value of 60 seconds.
+   *
+   * <p>RPC timeout is 20 seconds.
+   *
+   * <p>Total timeout for this operation is 60 mins or 1 hour.
    *
    * @see RetrySettings for more explanation.
    */
@@ -222,20 +219,17 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for calls to SampleRowKeys.
    *
-   * <p>This is idempotent and non-streaming operation. Retries will be attempted if RPC failed with
-   * {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   * <p>This is idempotent and non-streaming operation.
    *
-   * <p>Default retry values for this operation are:
+   * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
+   * Code#UNAVAILABLE} failure code.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * reattempt till a max retry timeout value of 60 seconds.
+   *
+   * <p>RPC timeout is 20 seconds.
+   *
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * @see RetrySettings for more explanation.
    */
@@ -246,20 +240,19 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for point reads via ReadRows.
    *
-   * <p>This is an idempotent and non-streaming operation. Retries will be attempted if RPC failed
-   * with {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   * <p>This is an idempotent and non-streaming operation.
    *
-   * <p>Default retry values for this operation are:
+   * <p>
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
+   * Code#UNAVAILABLE} failure code.
+   *
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * reattempt till a max retry timeout value of 60 seconds.
+   *
+   * <p>RPC timeout is 20 seconds.
+   *
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * @see RetrySettings for more explanation.
    */
@@ -270,20 +263,17 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for calls to MutateRow.
    *
-   * <p>This is an idempotent and non-streaming operation. Retries will be attempted if RPC failed
-   * with {@link Code#DEADLINE_EXCEEDED} and {@link Code#UNAVAILABLE} failure code.
+   * <p>This is an idempotent and non-streaming operation.
    *
-   * <p>Default retry values for this operation are:
+   * <p>Retries will be attempted if RPC failed * with {@link Code#DEADLINE_EXCEEDED} and {@link
+   * Code#UNAVAILABLE} failure code.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * reattempt till a max retry timeout value of 60 seconds.
+   *
+   * <p>RPC timeout is 20 seconds.
+   *
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * @see RetrySettings for more explanation.
    */
@@ -299,19 +289,14 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * {@link RowMutation} request signature is ignored for the manual batched calls.
    *
    * <p>Retries will be attempted if RPC are failed with {@link Code#DEADLINE_EXCEEDED}, {@link
-   * Code#UNAVAILABLE} and {@link Code#ABORTED} failure code.
+   * Code#UNAVAILABLE} or {@link Code#ABORTED} failure code.
    *
-   * <p>Default retry values for this operation are:
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * reattempt till a max retry timeout value of 60 seconds.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>RPC timeout is 20 seconds.
+   *
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * <p>On breach of certain triggers, this batch will initiates processing of accumulated requests.
    * These triggered could be configured via {@link BatchingSettings}. Currently it triggers when:
@@ -322,8 +307,9 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    *   <li>An interval of 1 second passes after batching initialization or last processed batch.
    * </ul>
    *
-   * <p>When size of the request in processing state reaches 100MB Or their count reaches 1000 then
-   * the batching are blocked from adding new values into the ongoing batch.
+   * <p>When size of the request in processing state reaches default value of 100MB or the request
+   * count reaches default count of 1000 then the batching will be blocked till some of the request
+   * resolves.
    *
    * @see RetrySettings for more explanation.
    * @see BatchingSettings for batch related configuration explanation.
@@ -335,20 +321,11 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for calls to CheckAndMutateRow.
    *
-   * <p>This is a non-idempotent and non-streaming operation. By default no retries will be
-   * attempted in case of RPC failure.
+   * <p>This is a non-idempotent and non-streaming operation.
    *
-   * <p>Default retry values for this operation are:
+   * <p>By default non-idempotent operations would not reattempt in case of RPC failure.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * @see RetrySettings for more explanation.
    */
@@ -359,20 +336,11 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   /**
    * Returns the object with the settings used for calls to ReadModifyWriteRow.
    *
-   * <p>This is a non-idempotent and non-streaming operation. By default no retries will be
-   * attempted in case of RPC failure.
+   * <p>This is a non-idempotent and non-streaming operation.
    *
-   * <p>Default retry values for this operation are:
+   * <p>By default non-idempotent operations would not reattempt in case of RPC failure.
    *
-   * <ul>
-   *   <li>InitialRetryDelay is 0.1 seconds.
-   *   <li>RetryDelayMultiplier is 1.3 times.
-   *   <li>MaxRetryDelay is 60 seconds.
-   *   <li>InitialRpcTimeout is 20 seconds.
-   *   <li>RpcTimeoutMultiplier is linear or 1.0 times.
-   *   <li>MaxRpcTimeout is 20 seconds.
-   *   <li>TotalTimeout is 600 seconds or 10 min.
-   * </ul>
+   * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
    * @see RetrySettings for more explanation.
    */
