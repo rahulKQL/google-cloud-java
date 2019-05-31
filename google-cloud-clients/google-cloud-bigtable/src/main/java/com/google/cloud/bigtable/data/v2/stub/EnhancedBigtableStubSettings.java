@@ -55,12 +55,13 @@ import org.threeten.bp.Duration;
  *   <li>The default service address (bigtable.googleapis.com) and default port (443) are used.
  *   <li>Credentials are acquired automatically through Application Default Credentials.
  *   <li>Retries are configured for idempotent methods but not for non-idempotent methods.
- *   <li>In case of streaming operation RPC timeout applies to each row and for the non-streaming
- *       operations rpc timeout considered as deadline of each call.
- *   <li>Each setting operation accepts RPC and total timeout, Here rpc timeouts are for each
- *       attempts to get the result whereas totalTimeout applies as operation timeout.
+ *   <li>This settings are mixed for streaming and non-streaming operation. In case of streaming
+ *       operations, RPC timeout applies to each row and for the non-streaming operations, RPC
+ *       timeout considered as deadline for every call.
+ *   <li>Each operation setting accepts RPC and total time out. Here, RPC timeouts are for each
+ *       attempt to get the result whereas total timeout applies to the operation timeout.
  *   <li>RetryDelayMultiplier controls the change in retry delay. After initial attempt, subsequent
- *       attempts are calculated by multiplying the retry delay of previous call.
+ *       attempts are calculated by multiplying the retry delay of the previous call.
  * </ul>
  *
  * <p>The only required setting is the instance name.
@@ -203,7 +204,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
    * Code#UNAVAILABLE} failure code.
    *
-   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on every
    * reattempt till a max retry timeout value of 60 seconds.
    *
    * <p>RPC timeout is 20 seconds.
@@ -224,7 +225,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
    * Code#UNAVAILABLE} failure code.
    *
-   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on every
    * reattempt till a max retry timeout value of 60 seconds.
    *
    * <p>RPC timeout is 20 seconds.
@@ -247,7 +248,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Retries will be attempted if RPC failed with {@link Code#DEADLINE_EXCEEDED} and {@link
    * Code#UNAVAILABLE} failure code.
    *
-   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on every
    * reattempt till a max retry timeout value of 60 seconds.
    *
    * <p>RPC timeout is 20 seconds.
@@ -268,7 +269,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Retries will be attempted if RPC failed * with {@link Code#DEADLINE_EXCEEDED} and {@link
    * Code#UNAVAILABLE} failure code.
    *
-   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on every
    * reattempt till a max retry timeout value of 60 seconds.
    *
    * <p>RPC timeout is 20 seconds.
@@ -291,15 +292,15 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * <p>Retries will be attempted if RPC are failed with {@link Code#DEADLINE_EXCEEDED}, {@link
    * Code#UNAVAILABLE} or {@link Code#ABORTED} failure code.
    *
-   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on each
+   * <p>RetryDelay starts with 100ms or 0.1 seconds, which multiplies with 1.3 times on every
    * reattempt till a max retry timeout value of 60 seconds.
    *
    * <p>RPC timeout is 20 seconds.
    *
    * <p>Total timeout for this operation is 600 seconds or 10 mins.
    *
-   * <p>On breach of certain triggers, this batch will initiates processing of accumulated requests.
-   * These triggered could be configured via {@link BatchingSettings}. Currently it triggers when:
+   * <p>On breach of certain triggers, this batch initiates the processing of accumulated requests.
+   * These triggers could be configured via {@link BatchingSettings}. Currently it triggers when:
    *
    * <ul>
    *   <li>100 or more requests are sent.
