@@ -18,6 +18,7 @@ package com.google.cloud.bigtable.data.v2;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.BetaApi;
 import com.google.api.core.InternalApi;
+import com.google.api.gax.batching.v2.Batcher;
 import com.google.api.gax.rpc.ApiExceptions;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.ServerStream;
@@ -33,8 +34,10 @@ import com.google.cloud.bigtable.data.v2.models.ReadModifyWriteRow;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowAdapter;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStub;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ExperimentalApi;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -885,7 +888,10 @@ public class BigtableDataClient implements AutoCloseable {
    *   // After `batcher` is closed, all mutations have been applied
    * }
    * }</pre>
+   *
+   * @deprecated Please use latest {@link #newBulkMutationBatcher(String)} API.
    */
+  @Deprecated
   @BetaApi("This surface is likely to change as the batching surface evolves.")
   public BulkMutationBatcher newBulkMutationBatcher() {
     return new BulkMutationBatcher(stub.bulkMutateRowsBatchingCallable());
@@ -918,6 +924,18 @@ public class BigtableDataClient implements AutoCloseable {
    */
   public void bulkMutateRows(BulkMutation mutation) {
     ApiExceptions.callAndTranslateApiException(bulkMutateRowsAsync(mutation));
+  }
+
+  /**
+   * Mutates multiple rows in a batch. Each individual row is mutated atomically as in MutateRow,
+   * but the entire batch is not executed atomically.
+   *
+   * TODO(rahulkql): fix javadoc
+   * }</pre>
+   */
+  @ExperimentalApi("This surface is under development, likely to change as it evolves")
+  public Batcher<RowMutationEntry, Void> newBulkMutationBatcher(String tableId) {
+    return stub.newMutateRowsBatcher(tableId);
   }
 
   /**

@@ -33,7 +33,11 @@ import org.threeten.bp.Duration;
  *
  * @see com.google.cloud.bigtable.data.v2.BigtableDataClient#newBulkMutationBatcher() for example
  *     usage.
+ *
+ * @deprecated Please use {@link
+ *     com.google.cloud.bigtable.data.v2.BigtableDataClient#newBulkMutationBatcher(String)}.
  */
+@Deprecated
 @BetaApi("This surface is likely to change as the batching surface evolves.")
 public final class BulkMutationBatcher implements AutoCloseable {
   private final UnaryCallable<RowMutation, Void> callable;

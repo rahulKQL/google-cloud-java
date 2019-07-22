@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigtable.data.v2.stub;
 
+import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
@@ -34,12 +35,14 @@ import com.google.api.gax.rpc.StubSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
 import com.google.api.gax.tracing.OpencensusTracerFactory;
+import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.KeyOffset;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.ReadModifyWriteRow;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -123,6 +126,9 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private final BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings;
   private final UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings;
   private final UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
+  private final com.google.api.gax.batching.v2.BatchingCallSettings<
+          RowMutationEntry, Void, BulkMutation, Void>
+      batchV2Settings;
 
   private EnhancedBigtableStubSettings(Builder builder) {
     super(builder);
@@ -148,6 +154,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     bulkMutateRowsSettings = builder.bulkMutateRowsSettings.build();
     checkAndMutateRowSettings = builder.checkAndMutateRowSettings.build();
     readModifyWriteRowSettings = builder.readModifyWriteRowSettings.build();
+    batchV2Settings = builder.batchV2Settings.build();
   }
 
   /** Create a new builder. */
@@ -329,7 +336,10 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    *
    * @see RetrySettings for more explanation.
    * @see BatchingSettings for batch related configuration explanation.
+   *
+   * @deprecated Please use latest batcher {@link #batchMutatorSettings()}
    */
+  @Deprecated
   public BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings() {
     return bulkMutateRowsSettings;
   }
@@ -362,6 +372,12 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     return readModifyWriteRowSettings;
   }
 
+  /** TODO: add javadoc */
+  public com.google.api.gax.batching.v2.BatchingCallSettings<
+          RowMutationEntry, Void, BulkMutation, Void>
+      batchMutatorSettings() {
+    return batchV2Settings;
+  }
   /** Returns a builder containing all the values of this settings class. */
   public Builder toBuilder() {
     return new Builder(this);
@@ -379,9 +395,13 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<String, List<KeyOffset>> sampleRowKeysSettings;
     private final UnaryCallSettings.Builder<RowMutation, Void> mutateRowSettings;
     private final BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings;
+
     private final UnaryCallSettings.Builder<ConditionalRowMutation, Boolean>
         checkAndMutateRowSettings;
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
+    private final com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
+            RowMutationEntry, Void, BulkMutation, Void>
+        batchV2Settings;
 
     /**
      * Initializes a new Builder with sane defaults for all settings.
@@ -460,6 +480,18 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
 
       readModifyWriteRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       copyRetrySettings(baseDefaults.readModifyWriteRowSettings(), readModifyWriteRowSettings);
+
+      batchV2Settings =
+          com.google.api.gax.batching.v2.BatchingCallSettings.newBuilder(
+                  new PlaceholderBatchingDescriptorV2())
+              .setRetryableCodes(DEFAULT_RETRY_CODES)
+              .setRetrySettings(DEFAULT_RETRY_SETTINGS)
+              .setBatchingSettings(
+                  com.google.api.gax.batching.v2.BatchingSettings.newBuilder()
+                      .setElementCountThreshold(100)
+                      .setRequestByteThreshold(20L * 1024 * 1024)
+                      .setDelayThreshold(Duration.ofSeconds(1))
+                      .build());
     }
 
     private Builder(EnhancedBigtableStubSettings settings) {
@@ -476,6 +508,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       bulkMutateRowsSettings = settings.bulkMutateRowsSettings.toBuilder();
       checkAndMutateRowSettings = settings.checkAndMutateRowSettings.toBuilder();
       readModifyWriteRowSettings = settings.readModifyWriteRowSettings.toBuilder();
+      batchV2Settings = settings.batchV2Settings.toBuilder();
     }
     // <editor-fold desc="Private Helpers">
 
@@ -618,12 +651,45 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       return readModifyWriteRowSettings;
     }
 
+    /** For new Batching */
+    public com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
+            RowMutationEntry, Void, BulkMutation, Void>
+        batchMutationSettings() {
+      return batchV2Settings;
+    }
+
     @SuppressWarnings("unchecked")
     public EnhancedBigtableStubSettings build() {
       Preconditions.checkState(projectId != null, "Project id must be set");
       Preconditions.checkState(instanceId != null, "Instance id must be set");
 
       return new EnhancedBigtableStubSettings(this);
+    }
+
+    private class PlaceholderBatchingDescriptorV2
+        implements com.google.api.gax.batching.v2.BatchingDescriptor<
+            RowMutationEntry, Void, BulkMutation, Void> {
+
+      @Override
+      public com.google.api.gax.batching.v2.RequestBuilder<RowMutationEntry, BulkMutation>
+          newRequestBuilder(BulkMutation bulkMutation) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public void splitResponse(Void aVoid, List<SettableApiFuture<Void>> list) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public void splitException(Throwable throwable, List<SettableApiFuture<Void>> list) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public long countBytes(RowMutationEntry rowMutationEntry) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
     }
     // </editor-fold>
   }

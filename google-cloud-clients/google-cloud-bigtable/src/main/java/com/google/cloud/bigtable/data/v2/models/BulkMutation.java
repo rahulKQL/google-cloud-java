@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  * <p>This class is meant for manual batching, while {@link BulkMutationBatcher} is meant for
  * automatic batching with flow control.
  */
-public final class BulkMutation implements Serializable {
+public final class BulkMutation implements Serializable, Cloneable {
   private static final long serialVersionUID = 3522061250439399088L;
 
   private final String tableId;
@@ -99,5 +99,11 @@ public final class BulkMutation implements Serializable {
         .setTableName(tableName)
         .setAppProfileId(requestContext.getAppProfileId())
         .build();
+  }
+
+  public BulkMutation clone() {
+    BulkMutation bulkMutation = BulkMutation.create(tableId);
+    bulkMutation.builder = this.builder.build().toBuilder();
+    return bulkMutation;
   }
 }
