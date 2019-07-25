@@ -43,6 +43,7 @@ import com.google.cloud.bigtable.data.v2.models.ReadModifyWriteRow;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsBatchingDescriptorV2;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -128,7 +129,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private final UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
   private final com.google.api.gax.batching.v2.BatchingCallSettings<
           RowMutationEntry, Void, BulkMutation, Void>
-      batchV2Settings;
+      batchRowsMutationV2Settings;
 
   private EnhancedBigtableStubSettings(Builder builder) {
     super(builder);
@@ -154,7 +155,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     bulkMutateRowsSettings = builder.bulkMutateRowsSettings.build();
     checkAndMutateRowSettings = builder.checkAndMutateRowSettings.build();
     readModifyWriteRowSettings = builder.readModifyWriteRowSettings.build();
-    batchV2Settings = builder.batchV2Settings.build();
+    batchRowsMutationV2Settings = builder.batchRowsMutationV2Settings.build();
   }
 
   /** Create a new builder. */
@@ -336,8 +337,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    *
    * @see RetrySettings for more explanation.
    * @see BatchingSettings for batch related configuration explanation.
-   *
-   * @deprecated Please use latest batcher {@link #batchMutatorSettings()}
+   * @deprecated Please use latest batcher {@link #batchRowsMutationV2Settings()}
    */
   @Deprecated
   public BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings() {
@@ -372,11 +372,45 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     return readModifyWriteRowSettings;
   }
 
-  /** TODO: add javadoc */
+  /**
+   * Returns the object with the settings used for calls to MutateRows.
+   *
+   * <p>Default retry and timeout settings:
+   *
+   * <ul>
+   *   <li>Retry {@link UnaryCallSettings.Builder#setRetryableCodes error codes} are: {@link
+   *       Code#DEADLINE_EXCEEDED}, {@link Code#UNAVAILABLE} and {@link Code#ABORTED}.
+   *   <li>RetryDelay between failed attempts {@link RetrySettings.Builder#setInitialRetryDelay
+   *       starts} at 100ms and {@link RetrySettings.Builder#setRetryDelayMultiplier increases
+   *       exponentially} by a factor of 1.3 until a {@link RetrySettings.Builder#setMaxRetryDelay
+   *       maximum of} 60 seconds.
+   *   <li>The default timeout for {@link RetrySettings.Builder#setMaxRpcTimeout each attempt} is 20
+   *       seconds and the timeout for the {@link RetrySettings.Builder#setTotalTimeout entire
+   *       operation} across all of the attempts is 10 mins.
+   * </ul>
+   *
+   * <p>On breach of certain triggers, the operation initiates processing of accumulated request for
+   * which the default settings are:
+   *
+   * <ul>
+   *   <li>When the {@link
+   *       com.google.api.gax.batching.v2.BatchingSettings.Builder#setElementCountThreshold request
+   *       count} reaches 100.
+   *   <li>When accumulated {@link
+   *       com.google.api.gax.batching.v2.BatchingSettings.Builder#setRequestByteThreshold request
+   *       size} reaches to 20MB.
+   *   <li>When an {@link com.google.api.gax.batching.v2.BatchingSettings.Builder#setDelayThreshold
+   *       interval of} 1 second passes after batching initialization or last processed batch.
+   * </ul>
+   *
+   * @see RetrySettings for more explanation.
+   * @see com.google.api.gax.batching.v2.BatchingSettings for batch related configuration
+   *     explanation.
+   */
   public com.google.api.gax.batching.v2.BatchingCallSettings<
           RowMutationEntry, Void, BulkMutation, Void>
-      batchMutatorSettings() {
-    return batchV2Settings;
+      batchRowsMutationV2Settings() {
+    return batchRowsMutationV2Settings;
   }
   /** Returns a builder containing all the values of this settings class. */
   public Builder toBuilder() {
@@ -401,7 +435,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
     private final com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
             RowMutationEntry, Void, BulkMutation, Void>
-        batchV2Settings;
+        batchRowsMutationV2Settings;
 
     /**
      * Initializes a new Builder with sane defaults for all settings.
@@ -481,9 +515,9 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       readModifyWriteRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
       copyRetrySettings(baseDefaults.readModifyWriteRowSettings(), readModifyWriteRowSettings);
 
-      batchV2Settings =
+      batchRowsMutationV2Settings =
           com.google.api.gax.batching.v2.BatchingCallSettings.newBuilder(
-                  new PlaceholderBatchingDescriptorV2())
+                  new MutateRowsBatchingDescriptorV2())
               .setRetryableCodes(DEFAULT_RETRY_CODES)
               .setRetrySettings(DEFAULT_RETRY_SETTINGS)
               .setBatchingSettings(
@@ -508,7 +542,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       bulkMutateRowsSettings = settings.bulkMutateRowsSettings.toBuilder();
       checkAndMutateRowSettings = settings.checkAndMutateRowSettings.toBuilder();
       readModifyWriteRowSettings = settings.readModifyWriteRowSettings.toBuilder();
-      batchV2Settings = settings.batchV2Settings.toBuilder();
+      batchRowsMutationV2Settings = settings.batchRowsMutationV2Settings.toBuilder();
     }
     // <editor-fold desc="Private Helpers">
 
@@ -654,8 +688,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     /** For new Batching */
     public com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
             RowMutationEntry, Void, BulkMutation, Void>
-        batchMutationSettings() {
-      return batchV2Settings;
+        batchRowsMutationV2Settings() {
+      return batchRowsMutationV2Settings;
     }
 
     @SuppressWarnings("unchecked")

@@ -26,11 +26,13 @@ import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnaryCallSettings;
 import com.google.api.gax.rpc.WatchdogProvider;
+import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.KeyOffset;
 import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.collect.Range;
 import java.util.List;
 import java.util.Set;
@@ -500,6 +502,20 @@ public class EnhancedBigtableStubSettingsTest {
     // default.
     assertThat(builder.getRetrySettings().getMaxAttempts()).isAtMost(1);
     assertThat(builder.getRetryableCodes()).isEmpty();
+  }
+
+  @Test
+  public void batchRowsMutationV2SettingsAreSane() {
+    com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
+            RowMutationEntry, Void, BulkMutation, Void>
+        builder = EnhancedBigtableStubSettings.newBuilder().batchRowsMutationV2Settings();
+
+    verifyRetrySettingAreSane(builder.getRetryableCodes(), builder.getRetrySettings());
+    assertThat(builder.getBatchingSettings().getElementCountThreshold()).isAtLeast(100);
+    assertThat(builder.getBatchingSettings().getRequestByteThreshold())
+        .isIn(Range.open(10L * 1024 * 1024, 50L * 1024 * 1024));
+    assertThat(builder.getBatchingSettings().getDelayThreshold())
+        .isIn(Range.open(Duration.ofMillis(100), Duration.ofMinutes(1)));
   }
 
   private void verifyRetrySettingAreSane(Set<Code> retryCodes, RetrySettings retrySettings) {

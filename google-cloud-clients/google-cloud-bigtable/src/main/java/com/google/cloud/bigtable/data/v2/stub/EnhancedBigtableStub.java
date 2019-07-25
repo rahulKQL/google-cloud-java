@@ -18,7 +18,6 @@ package com.google.cloud.bigtable.data.v2.stub;
 import com.google.api.core.InternalApi;
 import com.google.api.gax.batching.v2.Batcher;
 import com.google.api.gax.batching.v2.BatcherImpl;
-import com.google.api.gax.batching.v2.BatchingDescriptor;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
 import com.google.api.gax.retrying.RetryAlgorithm;
 import com.google.api.gax.retrying.RetryingExecutorWithContext;
@@ -50,7 +49,6 @@ import com.google.cloud.bigtable.data.v2.models.RowMutation;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.BulkMutateRowsUserFacingCallable;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsBatchingDescriptor;
-import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsBatchingDescriptorV2;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsRetryingCallable;
 import com.google.cloud.bigtable.data.v2.stub.mutaterows.MutateRowsUserFacingCallable;
 import com.google.cloud.bigtable.data.v2.stub.readrows.FilterMarkerRowsCallable;
@@ -368,6 +366,20 @@ public class EnhancedBigtableStub implements AutoCloseable {
   }
 
   /**
+   * Creates Batcher instance to handle RowMutationEntry which encapsulates MutateRowsRequest.Entry.
+   *
+   * <p>//TODO(rahulkql): more step wise information.
+   */
+  public Batcher<RowMutationEntry, Void> newMutateRowsBatcher(String tableId) {
+    return new BatcherImpl<>(
+        settings.batchRowsMutationV2Settings().getBatchingDescriptor(),
+        bulkMutateRowsCallable,
+        BulkMutation.create(tableId),
+        settings.batchRowsMutationV2Settings().getBatchingSettings(),
+        clientContext.getExecutor());
+  }
+
+  /**
    * Internal helper to create the base MutateRows callable chain. The chain is responsible for
    * retrying individual entry in case of error.
    *
@@ -506,17 +518,6 @@ public class EnhancedBigtableStub implements AutoCloseable {
     return readModifyWriteRowCallable;
   }
   // </editor-fold>
-
-  public Batcher<RowMutationEntry, Void> newMutateRowsBatcher(String tableId) {
-    BatchingDescriptor<RowMutationEntry, Void, BulkMutation, Void> descriptor =
-        new MutateRowsBatchingDescriptorV2();
-    return new BatcherImpl<>(
-        descriptor,
-        bulkMutateRowsCallable,
-        BulkMutation.create(tableId),
-        settings.batchMutatorSettings().getBatchingSettings(),
-        clientContext.getExecutor());
-  }
 
   @Override
   public void close() throws Exception {

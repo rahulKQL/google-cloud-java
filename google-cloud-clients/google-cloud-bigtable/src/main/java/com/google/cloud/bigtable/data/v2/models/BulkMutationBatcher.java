@@ -33,7 +33,6 @@ import org.threeten.bp.Duration;
  *
  * @see com.google.cloud.bigtable.data.v2.BigtableDataClient#newBulkMutationBatcher() for example
  *     usage.
- *
  * @deprecated Please use {@link
  *     com.google.cloud.bigtable.data.v2.BigtableDataClient#newBulkMutationBatcher(String)}.
  */

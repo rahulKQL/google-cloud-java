@@ -6,7 +6,6 @@ import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import javax.annotation.Nonnull;
 
-/** Does not offer toProto() or toBulkProto(). */
 public class RowMutationEntry implements MutationApi<RowMutationEntry>, Serializable {
   private static final long serialVersionUID = 1974738836742298192L;
 
@@ -103,15 +102,6 @@ public class RowMutationEntry implements MutationApi<RowMutationEntry>, Serializ
   public RowMutationEntry deleteRow() {
     mutation.deleteRow();
     return this;
-  }
-
-  @InternalApi
-  public Mutation getMutation() {
-    return mutation;
-  }
-
-  public ByteString getKey() {
-    return key;
   }
 
   @InternalApi

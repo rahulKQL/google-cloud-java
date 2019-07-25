@@ -930,7 +930,23 @@ public class BigtableDataClient implements AutoCloseable {
    * Mutates multiple rows in a batch. Each individual row is mutated atomically as in MutateRow,
    * but the entire batch is not executed atomically.
    *
-   * TODO(rahulkql): fix javadoc
+   * <p>Sample Code:
+   *
+   * <pre>{@code
+   * try (BigtableDataClient bigtableDataClient = BigtableDataClient.create("[PROJECT]", "[INSTANCE]")) {
+   *   try (Batcher<RowMutationEntry, Void> batcher = bigtableDataClient.newBulkMutationBatcher("[TABLE]")) {
+   *     for (String someVale : someCollections) {
+   *       RowMutationEntry mutation =
+   *           RowMutationEntry.create("[ROW KEY]")
+   *               .setCell("[FAMILY NAME]", "[QUALIFIER]", "[VALUE]");
+   *       ApiFuture<Void> entryFuture = batcher.add(mutation);
+   *     }
+   *
+   *     // Blocks until mutations are applied on all submitted row entries.
+   *     batcher.flush();
+   *   }
+   *   // Before `batcher` is closed, all remaining(If any) mutations are applied.
+   * }
    * }</pre>
    */
   @ExperimentalApi("This surface is under development, likely to change as it evolves")

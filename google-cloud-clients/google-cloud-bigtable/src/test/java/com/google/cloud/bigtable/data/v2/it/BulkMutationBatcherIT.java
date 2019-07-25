@@ -15,6 +15,9 @@
  */
 package com.google.cloud.bigtable.data.v2.it;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import com.google.api.gax.batching.v2.Batcher;
 import com.google.api.gax.rpc.ServerStream;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.it.env.TestEnvRule;
@@ -23,8 +26,8 @@ import com.google.cloud.bigtable.data.v2.models.Query;
 import com.google.cloud.bigtable.data.v2.models.Row;
 import com.google.cloud.bigtable.data.v2.models.RowCell;
 import com.google.cloud.bigtable.data.v2.models.RowMutation;
+import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
 import com.google.common.collect.Lists;
-import com.google.common.truth.Truth;
 import com.google.protobuf.ByteString;
 import java.util.List;
 import org.junit.ClassRule;
@@ -65,6 +68,39 @@ public class BulkMutationBatcherIT {
     }
     ServerStream<Row> actualRows = client.readRows(Query.create(tableId).prefix(rowPrefix));
 
-    Truth.assertThat(actualRows).containsExactlyElementsIn(expectedRows);
+    assertThat(actualRows).containsExactlyElementsIn(expectedRows);
+  }
+
+  @Test
+  public void testBatcher() throws Exception {
+    BigtableDataClient client = testEnvRule.env().getDataClient();
+    String tableId = testEnvRule.env().getTableId();
+    String family = testEnvRule.env().getFamilyId();
+    String rowPrefix = testEnvRule.env().getRowPrefix();
+
+    try (Batcher<RowMutationEntry, Void> batcher = client.newBulkMutationBatcher(tableId)) {
+      for (int i = 0; i < 10; i++) {
+        batcher.add(
+            RowMutationEntry.create(rowPrefix + "-" + i)
+                .setCell(family, "qualifier", 10_000L, "value-" + i));
+      }
+    }
+
+    List<Row> expectedRows = Lists.newArrayList();
+    for (int i = 0; i < 10; i++) {
+      expectedRows.add(
+          Row.create(
+              ByteString.copyFromUtf8(rowPrefix + "-" + i),
+              Lists.newArrayList(
+                  RowCell.create(
+                      family,
+                      ByteString.copyFromUtf8("qualifier"),
+                      10_000L,
+                      Lists.<String>newArrayList(),
+                      ByteString.copyFromUtf8("value-" + i)))));
+    }
+    ServerStream<Row> actualRows = client.readRows(Query.create(tableId).prefix(rowPrefix));
+
+    assertThat(actualRows).containsExactlyElementsIn(expectedRows);
   }
 }

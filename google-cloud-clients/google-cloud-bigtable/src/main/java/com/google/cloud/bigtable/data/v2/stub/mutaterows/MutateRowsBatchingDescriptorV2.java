@@ -18,10 +18,27 @@ package com.google.cloud.bigtable.data.v2.stub.mutaterows;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.v2.BatchingDescriptor;
 import com.google.api.gax.batching.v2.RequestBuilder;
+import com.google.api.gax.rpc.ApiException;
+import com.google.bigtable.v2.MutateRowsRequest;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
+import com.google.cloud.bigtable.data.v2.models.MutateRowsException;
+import com.google.cloud.bigtable.data.v2.models.MutateRowsException.FailedMutation;
+import com.google.cloud.bigtable.data.v2.models.Mutation;
 import com.google.cloud.bigtable.data.v2.models.RowMutationEntry;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
 import java.util.List;
+import java.util.Map;
+import javax.annotation.Nullable;
 
+/**
+ * A custom implementation of a {@link BatchingDescriptor} to split Rpc response into individual
+ * rows response and in a {@link MutateRowsException}.
+ *
+ * <p>This class is considered an internal implementation detail and not meant to be used by
+ * applications directly.
+ */
 public class MutateRowsBatchingDescriptorV2
     implements BatchingDescriptor<RowMutationEntry, Void, BulkMutation, Void> {
 
@@ -32,16 +49,51 @@ public class MutateRowsBatchingDescriptorV2
   }
 
   @Override
-  public void splitResponse(Void som, List<SettableApiFuture<Void>> list) {
-    for (SettableApiFuture<Void> batchResponse : list) {
+  public void splitResponse(Void som, List<SettableApiFuture<Void>> batch) {
+    for (SettableApiFuture<Void> batchResponse : batch) {
       batchResponse.set(null);
     }
   }
 
   @Override
-  public void splitException(Throwable throwable, List<SettableApiFuture<Void>> list) {
-    for (SettableApiFuture<Void> batchResponse : list) {
-      batchResponse.setException(throwable);
+  public void splitException(Throwable throwable, List<SettableApiFuture<Void>> batch) {
+    if (!(throwable instanceof MutateRowsException)) {
+      for (SettableApiFuture<Void> future : batch) {
+        future.setException(throwable);
+      }
+      return;
+    }
+
+    List<FailedMutation> failedMutations = ((MutateRowsException) throwable).getFailedMutations();
+
+    Map<Integer, FailedMutation> errorsByIndex =
+        Maps.uniqueIndex(
+            failedMutations,
+            new Function<FailedMutation, Integer>() {
+              @Override
+              public Integer apply(@Nullable FailedMutation input) {
+                return input.getIndex();
+              }
+            });
+
+    int i = 0;
+    for (SettableApiFuture<Void> response : batch) {
+      // NOTE: The gax batching api doesn't allow for a single response to get different
+      // exception for different entries. However this does not affect this client because
+      // SettableApiFuture corresponds to  single element. So just use the last error per entry.
+      ApiException lastError = null;
+
+      FailedMutation failure = errorsByIndex.get(i++);
+
+      if (failure != null) {
+        lastError = failure.getError();
+      }
+
+      if (lastError == null) {
+        response.set(null);
+      } else {
+        response.setException(lastError);
+      }
     }
   }
 
@@ -50,7 +102,7 @@ public class MutateRowsBatchingDescriptorV2
     return request.toProto().getSerializedSize();
   }
 
-  /** A {@link com.google.api.gax.batching.RequestBuilder} that can aggregate MutateRowsRequest */
+  /** A {@link RequestBuilder} that can aggregate BulkMutation */
   static class MyRequestBuilder implements RequestBuilder<RowMutationEntry, BulkMutation> {
     private BulkMutation bulkMutation;
 
@@ -60,7 +112,9 @@ public class MutateRowsBatchingDescriptorV2
 
     @Override
     public void add(RowMutationEntry rowEntry) {
-      bulkMutation.add(rowEntry.getKey(), rowEntry.getMutation());
+      MutateRowsRequest.Entry entry = rowEntry.toProto();
+      ByteString rowK = entry.getRowKey();
+      bulkMutation.add(rowK, Mutation.fromProtoUnsafe(entry.getMutationsList()));
     }
 
     @Override
