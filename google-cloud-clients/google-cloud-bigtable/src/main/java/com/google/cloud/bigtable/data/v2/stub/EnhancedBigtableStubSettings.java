@@ -429,7 +429,6 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<String, List<KeyOffset>> sampleRowKeysSettings;
     private final UnaryCallSettings.Builder<RowMutation, Void> mutateRowSettings;
     private final BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings;
-
     private final UnaryCallSettings.Builder<ConditionalRowMutation, Boolean>
         checkAndMutateRowSettings;
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
@@ -685,7 +684,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       return readModifyWriteRowSettings;
     }
 
-    /** For new Batching */
+    /** Returns the builder for the settings used for calls to bulk mutation. */
     public com.google.api.gax.batching.v2.BatchingCallSettings.Builder<
             RowMutationEntry, Void, BulkMutation, Void>
         batchRowsMutationV2Settings() {
@@ -698,32 +697,6 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       Preconditions.checkState(instanceId != null, "Instance id must be set");
 
       return new EnhancedBigtableStubSettings(this);
-    }
-
-    private class PlaceholderBatchingDescriptorV2
-        implements com.google.api.gax.batching.v2.BatchingDescriptor<
-            RowMutationEntry, Void, BulkMutation, Void> {
-
-      @Override
-      public com.google.api.gax.batching.v2.RequestBuilder<RowMutationEntry, BulkMutation>
-          newRequestBuilder(BulkMutation bulkMutation) {
-        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
-      }
-
-      @Override
-      public void splitResponse(Void aVoid, List<SettableApiFuture<Void>> list) {
-        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
-      }
-
-      @Override
-      public void splitException(Throwable throwable, List<SettableApiFuture<Void>> list) {
-        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
-      }
-
-      @Override
-      public long countBytes(RowMutationEntry rowMutationEntry) {
-        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
-      }
     }
     // </editor-fold>
   }

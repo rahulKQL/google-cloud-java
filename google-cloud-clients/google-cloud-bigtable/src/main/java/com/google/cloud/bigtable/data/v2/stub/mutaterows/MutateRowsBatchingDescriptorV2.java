@@ -82,7 +82,6 @@ public class MutateRowsBatchingDescriptorV2
       // exception for different entries. However this does not affect this client because
       // SettableApiFuture corresponds to  single element. So just use the last error per entry.
       ApiException lastError = null;
-
       FailedMutation failure = errorsByIndex.get(i++);
 
       if (failure != null) {
