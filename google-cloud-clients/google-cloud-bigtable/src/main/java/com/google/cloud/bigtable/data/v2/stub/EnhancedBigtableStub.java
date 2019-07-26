@@ -34,6 +34,7 @@ import com.google.bigtable.v2.MutateRowsRequest;
 import com.google.bigtable.v2.ReadRowsRequest;
 import com.google.bigtable.v2.SampleRowKeysRequest;
 import com.google.bigtable.v2.SampleRowKeysResponse;
+import com.google.cloud.bigtable.admin.v2.internal.BatchingUtil;
 import com.google.cloud.bigtable.data.v2.internal.RequestContext;
 import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
@@ -342,7 +343,8 @@ public class EnhancedBigtableStub implements AutoCloseable {
 
     BatchingCallSettings.Builder<MutateRowsRequest, Void> batchingCallSettings =
         BatchingCallSettings.newBuilder(new MutateRowsBatchingDescriptor())
-            .setBatchingSettings(settings.bulkMutateRowsSettings().getBatchingSettings());
+            .setBatchingSettings(
+                BatchingUtil.toV1(settings.bulkMutateRowsSettings().getBatchingSettings()));
 
     // This is a special case, the tracing starts after the batching, so we can't use
     // createUserFacingUnaryCallable

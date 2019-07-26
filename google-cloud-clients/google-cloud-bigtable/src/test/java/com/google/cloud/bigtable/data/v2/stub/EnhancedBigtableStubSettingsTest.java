@@ -17,15 +17,15 @@ package com.google.cloud.bigtable.data.v2.stub;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.api.gax.batching.BatchingSettings;
+import com.google.api.gax.batching.v2.BatchingCallSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.retrying.RetrySettings;
-import com.google.api.gax.rpc.BatchingCallSettings;
 import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnaryCallSettings;
 import com.google.api.gax.rpc.WatchdogProvider;
+import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.KeyOffset;
 import com.google.cloud.bigtable.data.v2.models.Query;
@@ -406,7 +406,12 @@ public class EnhancedBigtableStubSettingsTest {
             .setJittered(true)
             .build();
 
-    BatchingSettings batchingSettings = BatchingSettings.newBuilder().build();
+    com.google.api.gax.batching.v2.BatchingSettings batchingSettings =
+        com.google.api.gax.batching.v2.BatchingSettings.newBuilder()
+            .setRequestByteThreshold(1)
+            .setElementCountThreshold(1)
+            .setDelayThreshold(Duration.ofMillis(1))
+            .build();
 
     builder
         .bulkMutateRowsSettings()
@@ -438,24 +443,16 @@ public class EnhancedBigtableStubSettingsTest {
 
   @Test
   public void mutateRowsHasSaneDefaultsTest() {
-    BatchingCallSettings.Builder<RowMutation, Void> builder =
+    BatchingCallSettings.Builder<RowMutation, Void, BulkMutation, Void> builder =
         EnhancedBigtableStubSettings.newBuilder().bulkMutateRowsSettings();
 
     verifyRetrySettingAreSane(builder.getRetryableCodes(), builder.getRetrySettings());
 
     assertThat(builder.getBatchingSettings().getDelayThreshold())
         .isIn(Range.open(Duration.ZERO, Duration.ofMinutes(1)));
-    assertThat(builder.getBatchingSettings().getElementCountThreshold())
-        .isIn(Range.open(0L, 1_000L));
-    assertThat(builder.getBatchingSettings().getIsEnabled()).isTrue();
+    assertThat(builder.getBatchingSettings().getElementCountThreshold()).isIn(Range.open(0, 1_000));
     assertThat(builder.getBatchingSettings().getRequestByteThreshold())
         .isLessThan(256L * 1024 * 1024);
-    assertThat(
-            builder.getBatchingSettings().getFlowControlSettings().getMaxOutstandingElementCount())
-        .isLessThan(10_000L);
-    assertThat(
-            builder.getBatchingSettings().getFlowControlSettings().getMaxOutstandingRequestBytes())
-        .isLessThan(512L * 1024 * 1024);
   }
 
   @Test

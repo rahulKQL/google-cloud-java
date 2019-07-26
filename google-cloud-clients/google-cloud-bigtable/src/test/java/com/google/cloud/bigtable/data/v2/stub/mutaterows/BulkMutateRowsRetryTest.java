@@ -59,7 +59,7 @@ public class BulkMutateRowsRetryTest {
   private static final String TABLE_ID = "fake-table";
 
   private static final int MAX_ATTEMPTS = 5;
-  private static final long FLUSH_COUNT = 10;
+  private static final int FLUSH_COUNT = 10;
   private static final Duration FLUSH_PERIOD = Duration.ofMillis(50);
   private static final Duration DELAY_BUFFER = Duration.ofSeconds(1);
 

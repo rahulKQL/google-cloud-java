@@ -15,18 +15,18 @@
  */
 package com.google.cloud.bigtable.data.v2.stub;
 
+import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowControlSettings;
-import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
 import com.google.api.gax.batching.PartitionKey;
 import com.google.api.gax.batching.RequestBuilder;
+import com.google.api.gax.batching.v2.BatchingCallSettings;
 import com.google.api.gax.core.GaxProperties;
 import com.google.api.gax.core.GoogleCredentialsProvider;
 import com.google.api.gax.grpc.GaxGrpcProperties;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.BatchedRequestIssuer;
-import com.google.api.gax.rpc.BatchingCallSettings;
 import com.google.api.gax.rpc.BatchingDescriptor;
 import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.StatusCode.Code;
@@ -34,6 +34,7 @@ import com.google.api.gax.rpc.StubSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
 import com.google.api.gax.tracing.OpencensusTracerFactory;
+import com.google.cloud.bigtable.data.v2.models.BulkMutation;
 import com.google.cloud.bigtable.data.v2.models.ConditionalRowMutation;
 import com.google.cloud.bigtable.data.v2.models.KeyOffset;
 import com.google.cloud.bigtable.data.v2.models.Query;
@@ -131,7 +132,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
   private final UnaryCallSettings<Query, Row> readRowSettings;
   private final UnaryCallSettings<String, List<KeyOffset>> sampleRowKeysSettings;
   private final UnaryCallSettings<RowMutation, Void> mutateRowSettings;
-  private final BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings;
+  private final BatchingCallSettings<RowMutation, Void, BulkMutation, Void> bulkMutateRowsSettings;
   private final UnaryCallSettings<ConditionalRowMutation, Boolean> checkAndMutateRowSettings;
   private final UnaryCallSettings<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
 
@@ -341,7 +342,7 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
    * @see RetrySettings for more explanation.
    * @see BatchingSettings for batch related configuration explanation.
    */
-  public BatchingCallSettings<RowMutation, Void> bulkMutateRowsSettings() {
+  public BatchingCallSettings<RowMutation, Void, BulkMutation, Void> bulkMutateRowsSettings() {
     return bulkMutateRowsSettings;
   }
 
@@ -389,7 +390,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     private final UnaryCallSettings.Builder<Query, Row> readRowSettings;
     private final UnaryCallSettings.Builder<String, List<KeyOffset>> sampleRowKeysSettings;
     private final UnaryCallSettings.Builder<RowMutation, Void> mutateRowSettings;
-    private final BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings;
+    private final BatchingCallSettings.Builder<RowMutation, Void, BulkMutation, Void>
+        bulkMutateRowsSettings;
     private final UnaryCallSettings.Builder<ConditionalRowMutation, Boolean>
         checkAndMutateRowSettings;
     private final UnaryCallSettings.Builder<ReadModifyWriteRow, Row> readModifyWriteRowSettings;
@@ -449,21 +451,14 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       copyRetrySettings(baseDefaults.mutateRowSettings(), mutateRowSettings);
 
       bulkMutateRowsSettings =
-          BatchingCallSettings.newBuilder(new PlaceholderBatchingDescriptor())
+          BatchingCallSettings.newBuilder(new PlaceholderBatchingDescriptorV2())
               .setRetryableCodes(IDEMPOTENT_RETRY_CODES)
               .setRetrySettings(MUTATE_ROWS_RETRY_SETTINGS)
               .setBatchingSettings(
-                  BatchingSettings.newBuilder()
-                      .setIsEnabled(true)
-                      .setElementCountThreshold(100L)
+                  com.google.api.gax.batching.v2.BatchingSettings.newBuilder()
+                      .setElementCountThreshold(100)
                       .setRequestByteThreshold(20L * 1024 * 1024)
                       .setDelayThreshold(Duration.ofSeconds(1))
-                      .setFlowControlSettings(
-                          FlowControlSettings.newBuilder()
-                              .setLimitExceededBehavior(LimitExceededBehavior.Block)
-                              .setMaxOutstandingRequestBytes(100L * 1024 * 1024)
-                              .setMaxOutstandingElementCount(1_000L)
-                              .build())
                       .build());
 
       checkAndMutateRowSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
@@ -615,7 +610,8 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
     }
 
     /** Returns the builder for the settings used for calls to MutateTows. */
-    public BatchingCallSettings.Builder<RowMutation, Void> bulkMutateRowsSettings() {
+    public BatchingCallSettings.Builder<RowMutation, Void, BulkMutation, Void>
+        bulkMutateRowsSettings() {
       return bulkMutateRowsSettings;
     }
 
@@ -635,6 +631,32 @@ public class EnhancedBigtableStubSettings extends StubSettings<EnhancedBigtableS
       Preconditions.checkState(instanceId != null, "Instance id must be set");
 
       return new EnhancedBigtableStubSettings(this);
+    }
+
+    private static class PlaceholderBatchingDescriptorV2
+        implements com.google.api.gax.batching.v2.BatchingDescriptor<
+            RowMutation, Void, BulkMutation, Void> {
+
+      @Override
+      public com.google.api.gax.batching.v2.RequestBuilder<RowMutation, BulkMutation>
+          newRequestBuilder(BulkMutation bulkMutation) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public void splitResponse(Void aVoid, List<SettableApiFuture<Void>> list) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public void splitException(Throwable throwable, List<SettableApiFuture<Void>> list) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
+
+      @Override
+      public long countBytes(RowMutation rowMutation) {
+        throw new UnsupportedOperationException("Placeholder descriptor should not be used");
+      }
     }
     // </editor-fold>
   }

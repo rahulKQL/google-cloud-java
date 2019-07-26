@@ -84,7 +84,7 @@ public class ResourceHeaderTest {
                 .bulkMutateRowsSettings()
                 .getBatchingSettings()
                 .toBuilder()
-                .setElementCountThreshold(1L)
+                .setElementCountThreshold(1)
                 .build());
 
     client = BigtableDataClient.create(settings.build());
