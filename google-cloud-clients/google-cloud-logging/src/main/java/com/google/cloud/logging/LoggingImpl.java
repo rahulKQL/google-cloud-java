@@ -29,6 +29,9 @@ import com.google.api.core.ApiFunction;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.batching.Batcher;
+import com.google.api.gax.batching.BatcherImpl;
+import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.paging.AsyncPage;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.AsyncPageImpl;
@@ -77,6 +80,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import sun.rmi.runtime.Log;
 
 class LoggingImpl extends BaseService<LoggingOptions> implements Logging {
 
@@ -627,6 +631,78 @@ class LoggingImpl extends BaseService<LoggingOptions> implements Logging {
     return transform(
         rpc.write(writeLogEntriesRequest(getOptions(), logEntries, optionMap(options))),
         WRITE_RESPONSE_TO_VOID_FUNCTION);
+  }
+
+  //TODO(rahulkql): We need to wrap the existing batcher logic using new Batching API while
+  // preserving the behaviour.
+  public ApiFuture<Void> wrapExistingBatcher(Iterable<LogEntry> logEntries, WriteOption... options)
+      throws InterruptedException {
+    Batcher<LogEntry, Void> batcher = newBatcherLogWriter(options);
+
+    List<ApiFuture<Void>> response = new ArrayList<>();
+    for(LogEntry entry: logEntries){
+      response.add(batcher.add(entry));
+    }
+    switch (this.writeSynchronicity) {
+      case SYNC:
+
+        batcher.flush();
+        break;
+
+      case ASYNC:
+      default:
+        final ApiFuture<List<Void>> writeFuture = ApiFutures.allAsList(response);
+        final Object pendingKey = new Object();
+
+        //TODO:
+        pendingWrites.put(pendingKey, writeFuture);
+        ApiFutures.addCallback(
+            writeFuture,
+            new ApiFutureCallback<Void>() {
+              private void removeFromPending() {
+                pendingWrites.remove(pendingKey);
+              }
+
+              @Override
+              public void onSuccess(Void v) {
+                removeFromPending();
+              }
+
+              @Override
+              public void onFailure(Throwable t) {
+                try {
+                  Exception ex = t instanceof Exception ? (Exception) t : new Exception(t);
+                  throw new RuntimeException(ex);
+                } finally {
+                  removeFromPending();
+                }
+              }
+            },
+            MoreExecutors.directExecutor());
+        break;
+    }
+    return null;
+  }
+
+  @Override
+  public Batcher<LogEntry, Void> newBatcherLogWriter(WriteOption... options) {
+    Map<Option.OptionType, ?> optionTypeMap = optionMap(options);
+    String projectId =  getOptions().getProjectId();
+    WriteLogEntriesRequest.Builder builder = WriteLogEntriesRequest.newBuilder();
+    String logName = LOG_NAME.get(optionTypeMap);
+    if (logName != null) {
+      builder.setLogName(ProjectLogName.of(getOptions().getProjectId(), logName).toString());
+    }
+    MonitoredResource resource = RESOURCE.get(optionTypeMap);
+    if (resource != null) {
+      builder.setResource(resource.toPb());
+    }
+    Map<String, String> labels = LABELS.get(optionTypeMap);
+    if (labels != null) {
+      builder.putAllLabels(labels);
+    }
+
+    return rpc.writeBatch(projectId, builder.build());
   }
 
   static ListLogEntriesRequest listLogEntriesRequest(

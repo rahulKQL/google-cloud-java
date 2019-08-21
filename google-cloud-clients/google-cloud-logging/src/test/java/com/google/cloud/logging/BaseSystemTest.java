@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -82,6 +83,7 @@ public abstract class BaseSystemTest {
   }
 
   @Test
+  @Ignore
   public void testCreateGetUpdateAndDeleteSink() {
     String name = formatForTest("test-create-get-update-sink");
     SinkInfo sinkInfo =
@@ -120,6 +122,7 @@ public abstract class BaseSystemTest {
   }
 
   @Test
+  @Ignore
   public void testListSinks() throws InterruptedException {
     String firstName = formatForTest("test-list-sinks-1");
     String secondName = formatForTest("test-list-sinks-2");
@@ -206,6 +209,7 @@ public abstract class BaseSystemTest {
   }
 
   @Test
+  @Ignore
   public void testWriteAndListLogEntries() throws InterruptedException {
     String logId = formatForTest("test-write-log-entries-log");
     LoggingOptions loggingOptions = logging().getOptions();

@@ -17,6 +17,7 @@
 package com.google.cloud.logging;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.gax.batching.Batcher;
 import com.google.api.gax.paging.AsyncPage;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.MonitoredResource;
@@ -700,6 +701,8 @@ public interface Logging extends AutoCloseable, Service<LoggingOptions> {
    * }</pre>
    */
   void write(Iterable<LogEntry> logEntries, WriteOption... options);
+
+  Batcher<LogEntry, Void> newBatcherLogWriter(WriteOption... options);
 
   /**
    * Lists log entries. This method returns a {@link Page} object that can be used to consume

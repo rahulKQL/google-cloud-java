@@ -16,12 +16,39 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-logging</site.installationModule>
+    <gax.development.version>1.48.0</gax.development.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>google-cloud-core-grpc</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.api</groupId>
+          <artifactId>gax-grpc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.api</groupId>
+          <artifactId>gax</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+      <dependency>
+          <groupId>com.google.api</groupId>
+          <artifactId>gax-grpc</artifactId>
+          <version>${gax.development.version}</version>
+          <exclusions>
+              <exclusion>
+                  <groupId>com.google.api</groupId>
+                  <artifactId>gax</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
+      <dependency>
+          <groupId>com.google.api</groupId>
+          <artifactId>gax</artifactId>
+          <version>${gax.development.version}</version>
+      </dependency>
     <dependency>
       <groupId>com.google.api.grpc</groupId>
       <artifactId>proto-google-cloud-logging-v2</artifactId>
@@ -59,6 +86,7 @@
       <groupId>com.google.api</groupId>
       <artifactId>gax-grpc</artifactId>
       <classifier>testlib</classifier>
+      <version>${gax.development.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

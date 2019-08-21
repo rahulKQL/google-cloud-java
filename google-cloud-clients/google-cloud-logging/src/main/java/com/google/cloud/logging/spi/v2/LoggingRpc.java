@@ -17,7 +17,9 @@
 package com.google.cloud.logging.spi.v2;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.gax.batching.Batcher;
 import com.google.cloud.ServiceRpc;
+import com.google.cloud.logging.LogEntry;
 import com.google.logging.v2.CreateLogMetricRequest;
 import com.google.logging.v2.CreateSinkRequest;
 import com.google.logging.v2.DeleteLogMetricRequest;
@@ -166,4 +168,6 @@ public interface LoggingRpc extends AutoCloseable, ServiceRpc {
    * @param request the request object containing all of the parameters for the API call
    */
   ApiFuture<Empty> delete(DeleteLogMetricRequest request);
+
+  Batcher<LogEntry, Void> writeBatch(String projectId, WriteLogEntriesRequest request);
 }

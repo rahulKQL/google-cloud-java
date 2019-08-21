@@ -19,6 +19,8 @@ package com.google.cloud.logging.spi.v2;
 import com.google.api.core.ApiFunction;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.batching.Batcher;
+import com.google.api.gax.batching.BatcherImpl;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
 import com.google.api.gax.core.BackgroundResource;
@@ -36,6 +38,8 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.grpc.GrpcTransportOptions;
 import com.google.cloud.grpc.GrpcTransportOptions.ExecutorFactory;
+import com.google.cloud.logging.LogBatchingDescriptor;
+import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.LoggingException;
 import com.google.cloud.logging.LoggingOptions;
 import com.google.cloud.logging.v2.ConfigClient;
@@ -75,6 +79,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import org.threeten.bp.Duration;
 
 public class GrpcLoggingRpc implements LoggingRpc {
 
@@ -271,6 +276,21 @@ public class GrpcLoggingRpc implements LoggingRpc {
         metricsClient.deleteLogMetricCallable().futureCall(request),
         true,
         StatusCode.Code.NOT_FOUND);
+  }
+
+  // TODO(rahulkql): Update BatchingSettings with correct settings.
+  @Override
+  public Batcher<LogEntry, Void> writeBatch(String projectId, WriteLogEntriesRequest request) {
+    return new BatcherImpl<>(
+        new LogBatchingDescriptor(projectId),
+        loggingClient.writeLogEntriesCallable(),
+        request,
+        BatchingSettings.newBuilder()
+            .setRequestByteThreshold(Long.MAX_VALUE)
+            .setElementCountThreshold(Long.MAX_VALUE)
+            .setDelayThreshold(Duration.ofSeconds(5))
+            .build(),
+        clientContext.getExecutor());
   }
 
   @Override
