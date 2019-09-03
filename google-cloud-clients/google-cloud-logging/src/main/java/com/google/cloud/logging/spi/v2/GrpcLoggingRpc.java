@@ -19,6 +19,8 @@ package com.google.cloud.logging.spi.v2;
 import com.google.api.core.ApiFunction;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.batching.Batcher;
+import com.google.api.gax.batching.BatcherImpl;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
 import com.google.api.gax.core.BackgroundResource;
@@ -36,8 +38,11 @@ import com.google.cloud.NoCredentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.grpc.GrpcTransportOptions;
 import com.google.cloud.grpc.GrpcTransportOptions.ExecutorFactory;
+import com.google.cloud.logging.LogBatchingDescriptor;
+import com.google.cloud.logging.LogEntry;
 import com.google.cloud.logging.LoggingException;
 import com.google.cloud.logging.LoggingOptions;
+import com.google.cloud.logging.Payload;
 import com.google.cloud.logging.v2.ConfigClient;
 import com.google.cloud.logging.v2.ConfigSettings;
 import com.google.cloud.logging.v2.LoggingClient;
@@ -78,6 +83,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class GrpcLoggingRpc implements LoggingRpc {
 
+  private final String projectId;
   private final ConfigClient configClient;
   private final LoggingClient loggingClient;
   private final MetricsClient metricsClient;
@@ -166,6 +172,7 @@ public class GrpcLoggingRpc implements LoggingRpc {
       configClient = ConfigClient.create(confBuilder.build());
       loggingClient = LoggingClient.create(logBuilder.build());
       metricsClient = MetricsClient.create(metricsBuilder.build());
+      projectId = options.getProjectId();
     } catch (Exception ex) {
       throw new IOException(ex);
     }
@@ -271,6 +278,17 @@ public class GrpcLoggingRpc implements LoggingRpc {
         metricsClient.deleteLogMetricCallable().futureCall(request),
         true,
         StatusCode.Code.NOT_FOUND);
+  }
+
+  @Override
+  public Batcher<LogEntry, Void> createBatcher() {
+
+    return new BatcherImpl<>(
+        new LogBatchingDescriptor(projectId),
+        loggingClient.writeLogEntriesCallable(),
+        WriteLogEntriesRequest.newBuilder().build(),
+        loggingClient.getSettings().writeLogEntriesSettings().getBatchingSettings(),
+        executor);
   }
 
   @Override

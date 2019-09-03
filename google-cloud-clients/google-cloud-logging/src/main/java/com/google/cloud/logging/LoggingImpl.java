@@ -29,6 +29,7 @@ import com.google.api.core.ApiFunction;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.batching.Batcher;
 import com.google.api.gax.paging.AsyncPage;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.AsyncPageImpl;
@@ -80,6 +81,8 @@ import java.util.concurrent.TimeoutException;
 
 class LoggingImpl extends BaseService<LoggingOptions> implements Logging {
 
+  private final Batcher<LogEntry, Void> batcher;
+
   private static final int FLUSH_WAIT_TIMEOUT_SECONDS = 6;
   private final LoggingRpc rpc;
   private final Map<Object, ApiFuture<Void>> pendingWrites = new ConcurrentHashMap<>();
@@ -107,6 +110,7 @@ class LoggingImpl extends BaseService<LoggingOptions> implements Logging {
   LoggingImpl(LoggingOptions options) {
     super(options);
     rpc = options.getLoggingRpcV2();
+    batcher = rpc.createBatcher();
   }
 
   public void setWriteSynchronicity(Synchronicity writeSynchronicity) {
@@ -582,6 +586,14 @@ class LoggingImpl extends BaseService<LoggingOptions> implements Logging {
     }
   }
 
+  private void writeLogEntries2(Iterable<LogEntry> logEntries, WriteOption... writeOptions) {
+    ImmutableList.Builder<ApiFuture<Void>> apiFutures = ImmutableList.builder();
+    for(LogEntry logE : logEntries){
+      apiFutures.add(batcher.add(logE));
+    }
+
+    ApiFutures.allAsList(apiFutures.build());
+  }
   /* Write logs synchronously or asynchronously based on writeSynchronicity setting. */
   private void writeLogEntries(Iterable<LogEntry> logEntries, WriteOption... writeOptions) {
     if (closed) return;
